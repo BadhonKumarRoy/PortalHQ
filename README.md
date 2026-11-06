@@ -5,13 +5,11 @@
 
 ---
 
-## 🌐 Live Production Deployment
+## 🌐 Live Application
 
-Access the platform live from any device (phone, tablet, PC):
+Access PortalHQ live from any device (mobile, tablet, desktop):
 
-* 🚀 **Live Web Application (Vercel):** [https://portal-hq-os.vercel.app/](https://portal-hq-os.vercel.app/)
-* ⚡ **Live REST API & Backend (Render):** [https://portalhq.onrender.com/api/](https://portalhq.onrender.com/api/)
-* 🛠️ **Live Django Administration:** [https://portalhq.onrender.com/admin/](https://portalhq.onrender.com/admin/)
+* 🚀 **Web App:** [https://portal-hq-os.vercel.app/](https://portal-hq-os.vercel.app/)
 
 ---
 
