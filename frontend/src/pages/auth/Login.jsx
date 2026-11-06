@@ -154,12 +154,57 @@ export default function Login() {
       </div>
 
       {/* ---- RIGHT SIDE: Form ---- */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-slate-50">
+      <div className="flex-1 flex flex-col justify-center items-center p-4 sm:p-6 bg-slate-50 min-h-screen">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
+          {/* Mobile brand header (visible on phone screens) */}
+          <div className="flex flex-col items-center mb-6 lg:hidden">
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/logo.png"
+                alt="PortalHQ Logo"
+                className="w-10 h-10 rounded-xl object-contain shadow-md"
+              />
+              <span className="font-extrabold text-2xl text-slate-900 tracking-tight">PortalHQ</span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">One Portal. Every Client. Every Operation.</p>
+
+            {/* Mobile 1-Click Demo Buttons */}
+            <div className="w-full mt-4 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-2">
+                <span className="flex items-center gap-1 text-teal-600">
+                  <Sparkles size={14} /> Quick Demo Login:
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('admin@portalhq.com', 'admin123')}
+                  className="py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium rounded-lg text-center transition"
+                >
+                  👑 Admin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('employee@portalhq.com', 'emp123')}
+                  className="py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium rounded-lg text-center transition"
+                >
+                  💼 Staff
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('client@portalhq.com', 'client123')}
+                  className="py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium rounded-lg text-center transition"
+                >
+                  🤝 Client
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 sm:p-8">
             <div className="mb-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-slate-800">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
                   {isSignUp ? 'Create an Account' : 'Sign In'}
                 </h2>
                 <button
@@ -170,7 +215,7 @@ export default function Login() {
                   {isSignUp ? 'Already have an account?' : 'Need an account? Sign Up'}
                 </button>
               </div>
-              <p className="text-slate-500 text-sm mt-1">
+              <p className="text-slate-500 text-xs sm:text-sm mt-1">
                 {isSignUp
                   ? 'Sign up to explore the PortalHQ workspace.'
                   : 'Enter your credentials or use the demo buttons.'}
