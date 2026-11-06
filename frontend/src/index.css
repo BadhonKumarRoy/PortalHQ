@@ -1,0 +1,65 @@
+/* src/index.css */
+/* Global stylesheet — loads Tailwind CSS and sets base styles for PortalHQ */
+
+/* Load all Tailwind utility classes */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Base Styles
+   ============================================================ */
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-slate-800;
+  }
+
+  /* Make all headings use the brand font weight */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+}
+
+/* ============================================================
+   Custom Scrollbar Styles
+   Makes the scrollbar thin and matches the brand palette
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #36ADA3;
+}
+
+/* ============================================================
+   Reusable Component Classes (via @layer components)
+   ============================================================ */
+@layer components {
+  /* Standard transition for interactive elements */
+  .transition-base {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  /* Focus ring using accent color */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1;
+  }
+}
