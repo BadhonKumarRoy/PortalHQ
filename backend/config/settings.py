@@ -25,8 +25,8 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-producti
 # Debug mode — set to False in production
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-# Hosts that are allowed to serve this app
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+# Hosts that are allowed to serve this app (supports local and cloud deployment like Render)
+ALLOWED_HOSTS = ['*']
 
 # ─────────────────────────────────────────────
 # CUSTOM USER MODEL
@@ -185,15 +185,6 @@ SIMPLE_JWT = {
 # ─────────────────────────────────────────────
 # CORS CONFIGURATION
 # ─────────────────────────────────────────────
-# Allow requests from the Vite development server (React frontend on port 3000 and 5173)
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-]
-
-CORS_ALLOW_ALL_ORIGINS = True  # Development mode: allow frontend from any local dev port
-
-# Allow cookies/auth headers to be sent with cross-origin requests
+# Allow all origins so Vercel frontend, local development, and mobile can communicate with the API
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
