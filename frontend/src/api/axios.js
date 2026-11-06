@@ -6,7 +6,7 @@ import axios from 'axios';
 
 // Create a custom Axios instance with our API's base URL
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://portalhq.onrender.com/api',
 });
 
 // ---- REQUEST INTERCEPTOR ----
