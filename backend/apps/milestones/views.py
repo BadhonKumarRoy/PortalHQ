@@ -23,27 +23,33 @@ class MilestoneViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Return milestones the user has access to, based on their role.
+        Allows filtering by project: /api/milestones/?project=<id>
         """
         user = self.request.user
+        qs = Milestone.objects.none()
 
         if user.role == 'ADMIN':
             # Admins see all milestones
-            return Milestone.objects.all().select_related('project')
+            qs = Milestone.objects.all().select_related('project')
 
         elif user.role == 'EMPLOYEE':
             # Employees see milestones for their assigned projects
-            return Milestone.objects.filter(
+            qs = Milestone.objects.filter(
                 project__assigned_employees=user
             ).select_related('project')
 
         elif user.role == 'CLIENT':
             # Clients see milestones for their client's projects
             if hasattr(user, 'client_profile') and user.client_profile:
-                return Milestone.objects.filter(
+                qs = Milestone.objects.filter(
                     project__client=user.client_profile
                 ).select_related('project')
 
-        return Milestone.objects.none()
+        project_id = self.request.query_params.get('project')
+        if project_id:
+            qs = qs.filter(project_id=project_id)
+
+        return qs
 
     def get_permissions(self):
         """
@@ -69,23 +75,28 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Return tasks accessible to the user based on their role."""
         user = self.request.user
+        qs = Task.objects.none()
 
         if user.role == 'ADMIN':
-            return Task.objects.all().select_related('milestone', 'assigned_to')
+            qs = Task.objects.all().select_related('milestone', 'assigned_to')
 
         elif user.role == 'EMPLOYEE':
             # Tasks in projects the employee is assigned to
-            return Task.objects.filter(
+            qs = Task.objects.filter(
                 milestone__project__assigned_employees=user
             ).select_related('milestone', 'assigned_to')
 
         elif user.role == 'CLIENT':
             if hasattr(user, 'client_profile') and user.client_profile:
-                return Task.objects.filter(
+                qs = Task.objects.filter(
                     milestone__project__client=user.client_profile
                 ).select_related('milestone', 'assigned_to')
 
-        return Task.objects.none()
+        milestone_id = self.request.query_params.get('milestone')
+        if milestone_id:
+            qs = qs.filter(milestone_id=milestone_id)
+
+        return qs
 
     def get_permissions(self):
         """Admins and Employees can create/update tasks; Clients are read-only."""

@@ -23,6 +23,7 @@ class Project(models.Model):
     STATUS_CHOICES = [
         ('PLANNED', 'Planned'),           # Project created but not started
         ('ACTIVE', 'Active'),             # Currently in progress
+        ('IN_PROGRESS', 'In Progress'),   # In progress
         ('ON_HOLD', 'On Hold'),           # Temporarily paused
         ('UNDER_REVIEW', 'Under Review'), # Work submitted, awaiting approval
         ('COMPLETED', 'Completed'),       # All work done and accepted
