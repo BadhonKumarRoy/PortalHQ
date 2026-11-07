@@ -13,6 +13,7 @@ import Modal from '../../../components/ui/Modal';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
+import { copyToClipboard } from '../../../utils/clipboard';
 import toast from 'react-hot-toast';
 import { 
   Users, 
@@ -170,14 +171,18 @@ export default function Settings() {
   };
 
   /** Copy credentials to clipboard for WhatsApp/Slack */
-  const copyCredentialsToClipboard = () => {
+  const copyCredentialsToClipboard = async () => {
     const textToCopy = `🔑 PortalHQ Access Details:\n• Portal: ${window.location.origin}/\n• Email: ${credentialModal.email}\n• Password: ${credentialModal.password}\n• Role: ${credentialModal.role}`;
-    navigator.clipboard.writeText(textToCopy);
-    setCredentialModal((prev) => ({ ...prev, copied: true }));
-    toast.success('Credentials copied to clipboard!');
-    setTimeout(() => {
-      setCredentialModal((prev) => ({ ...prev, copied: false }));
-    }, 3000);
+    const success = await copyToClipboard(textToCopy);
+    if (success) {
+      setCredentialModal((prev) => ({ ...prev, copied: true }));
+      toast.success('Credentials copied to clipboard!');
+      setTimeout(() => {
+        setCredentialModal((prev) => ({ ...prev, copied: false }));
+      }, 3000);
+    } else {
+      toast.error('Could not copy automatically. Please copy the text manually.');
+    }
   };
 
   if (loading) return <LoadingSpinner />;

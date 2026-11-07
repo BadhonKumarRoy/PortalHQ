@@ -9,6 +9,7 @@ import { getClient, getClientPortalAccess } from '../../../api/clients';
 import { getProjects } from '../../../api/projects';
 import { getTickets } from '../../../api/tickets';
 import { getDocuments } from '../../../api/documents';
+import { copyToClipboard } from '../../../utils/clipboard';
 import PageHeader from '../../../components/ui/PageHeader';
 import Button from '../../../components/ui/Button';
 import Card from '../../../components/ui/Card';
@@ -31,13 +32,15 @@ export default function ClientDetails() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
 
+  // Generating state for credentials
+  const [generating, setGenerating] = useState(false);
+
   // Credentials Modal State
   const [credModal, setCredModal] = useState({
     open: false,
     email: '',
     password: '',
     copied: false,
-    loading: false,
   });
 
   useEffect(() => {
@@ -62,31 +65,47 @@ export default function ClientDetails() {
     fetchAll();
   }, [id]);
 
-  /** Retrieve or reset client's portal login info */
+  /** Retrieve or reset client's portal login info and auto-copy to clipboard */
   const handlePortalAccess = async () => {
+    setGenerating(true);
     try {
       const res = await getClientPortalAccess(id);
+      const textToCopy = `🔑 PortalHQ Client Portal Access:\n• Portal URL: ${window.location.origin}/\n• Company: ${client?.company_name}\n• Email: ${res.data.email}\n• Temporary Password: ${res.data.temp_password}`;
+      
+      const isCopied = await copyToClipboard(textToCopy);
+
       setCredModal({
         open: true,
         email: res.data.email,
         password: res.data.temp_password,
-        copied: false,
-        loading: false,
+        copied: isCopied,
       });
+
+      if (isCopied) {
+        toast.success('Credentials copied to clipboard!');
+      } else {
+        toast.success('Credentials ready to copy!');
+      }
     } catch {
       toast.error('Failed to generate client portal credentials.');
+    } finally {
+      setGenerating(false);
     }
   };
 
-  /** Copy credentials to clipboard */
-  const copyCredentials = () => {
+  /** Manual click on Copy button inside the modal */
+  const handleCopyFromModal = async () => {
     const textToCopy = `🔑 PortalHQ Client Portal Access:\n• Portal URL: ${window.location.origin}/\n• Company: ${client?.company_name}\n• Email: ${credModal.email}\n• Temporary Password: ${credModal.password}`;
-    navigator.clipboard.writeText(textToCopy);
-    setCredModal((prev) => ({ ...prev, copied: true }));
-    toast.success('Credentials copied to clipboard!');
-    setTimeout(() => {
-      setCredModal((prev) => ({ ...prev, copied: false }));
-    }, 3000);
+    const success = await copyToClipboard(textToCopy);
+    if (success) {
+      setCredModal((prev) => ({ ...prev, copied: true }));
+      toast.success('Credentials copied to clipboard!');
+      setTimeout(() => {
+        setCredModal((prev) => ({ ...prev, copied: false }));
+      }, 3000);
+    } else {
+      toast.error('Could not copy automatically. Please select and copy the text below.');
+    }
   };
 
   if (loading) return <LoadingSpinner />;
@@ -120,10 +139,19 @@ export default function ClientDetails() {
         subtitle={client.industry || 'Client Profile'}
         action={
           <div className="flex gap-2">
-            <Button icon={KeyRound} variant="secondary" onClick={handlePortalAccess}>
+            <Button
+              icon={KeyRound}
+              variant="secondary"
+              loading={generating}
+              onClick={handlePortalAccess}
+            >
               Share Portal Login
             </Button>
-            <Button icon={Pencil} variant="secondary" onClick={() => navigate(`/organization/clients/${id}/edit`)}>
+            <Button
+              icon={Pencil}
+              variant="secondary"
+              onClick={() => navigate(`/organization/clients/${id}/edit`)}
+            >
               Edit Client
             </Button>
           </div>
@@ -160,8 +188,14 @@ export default function ClientDetails() {
               <InfoRow icon={MapPin} label="Address" value={client.address} />
 
               <div className="pt-3 border-t border-slate-100 flex justify-end">
-                <Button size="sm" icon={KeyRound} variant="secondary" onClick={handlePortalAccess}>
-                  Copy Login Details
+                <Button
+                  size="sm"
+                  icon={KeyRound}
+                  variant="secondary"
+                  loading={generating}
+                  onClick={handlePortalAccess}
+                >
+                  Share Portal Login
                 </Button>
               </div>
             </div>
@@ -241,9 +275,9 @@ export default function ClientDetails() {
             <Button
               variant={credModal.copied ? 'primary' : 'secondary'}
               icon={credModal.copied ? Check : Copy}
-              onClick={copyCredentials}
+              onClick={handleCopyFromModal}
             >
-              {credModal.copied ? 'Copied to Clipboard!' : 'Copy Login Credentials'}
+              {credModal.copied ? '✓ Copied to Clipboard!' : 'Copy Login Credentials'}
             </Button>
             <Button onClick={() => setCredModal((prev) => ({ ...prev, open: false }))}>
               Done

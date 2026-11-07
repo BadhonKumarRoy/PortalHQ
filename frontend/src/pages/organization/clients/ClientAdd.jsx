@@ -11,6 +11,7 @@ import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Card from '../../../components/ui/Card';
 import Modal from '../../../components/ui/Modal';
+import { copyToClipboard } from '../../../utils/clipboard';
 import toast from 'react-hot-toast';
 import { Copy, Check, KeyRound } from 'lucide-react';
 
@@ -136,14 +137,18 @@ export default function ClientAdd() {
     }
   };
 
-  const copyCredentials = () => {
+  const copyCredentials = async () => {
     const textToCopy = `🔑 PortalHQ Client Portal Access:\n• Portal URL: ${window.location.origin}/\n• Company: ${credModal.companyName}\n• Email: ${credModal.email}\n• Temporary Password: ${credModal.password}`;
-    navigator.clipboard.writeText(textToCopy);
-    setCredModal((prev) => ({ ...prev, copied: true }));
-    toast.success('Client login credentials copied to clipboard!');
-    setTimeout(() => {
-      setCredModal((prev) => ({ ...prev, copied: false }));
-    }, 3000);
+    const success = await copyToClipboard(textToCopy);
+    if (success) {
+      setCredModal((prev) => ({ ...prev, copied: true }));
+      toast.success('Client login credentials copied to clipboard!');
+      setTimeout(() => {
+        setCredModal((prev) => ({ ...prev, copied: false }));
+      }, 3000);
+    } else {
+      toast.error('Could not copy automatically. Please copy the text manually.');
+    }
   };
 
   return (
