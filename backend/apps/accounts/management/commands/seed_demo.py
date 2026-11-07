@@ -4,12 +4,12 @@ Command to seed initial team members and realistic testing data:
   - Badhon -> Master Admin (badhon@portalhq.com, Pass: admin123)
   - Raghib -> Organization Admin (raghib@portalhq.com, Pass: admin123)
   - Khadija -> Employee / Staff (khadija@portalhq.com, Pass: emp123)
-  - Zulkijlee -> Client (zulkijlee@client.com, Pass: client123, Apex Innovations Ltd.)
-  - Elena Rostova -> Client (uits@client.com, Pass: client123, UITS Tech Systems)
+  - Zulkijlee -> Client (zulkijlee@client.com, Pass: client123, UITS Tech Systems)
+  - Elena Rostova -> Client (uits@client.com, Pass: client123, Apex Innovations Ltd.)
 - Projects:
-  - Enterprise PortalHQ Modernization (Active, Milestones, Tasks - Assigned to Khadija)
-  - Cloud Infrastructure Migration (Planned - Assigned to Khadija)
-  - Mobile Client Companion App (Under Review - Assigned to Khadija)
+  - Enterprise PortalHQ Modernization (Active, Milestones, Tasks - Assigned to Khadija, Client: UITS Tech Systems)
+  - Cloud Infrastructure Migration (Planned - Assigned to Khadija, Client: UITS Tech Systems)
+  - Mobile Client Companion App (Under Review - Assigned to Khadija, Client: Apex Innovations Ltd.)
 - Milestones & Actionable Tasks
 - Support Tickets & Real-Time Comments (Zulkijlee & Khadija)
 - Documents & Approval Requests (Uploaded by Khadija, reviewed by Zulkijlee)
@@ -95,7 +95,7 @@ class Command(BaseCommand):
         khadija_user.save()
         self.stdout.write(self.style.SUCCESS('Configured Employee: Khadija (khadija@portalhq.com, Pass: emp123)'))
 
-        # 2.4 Zulkijlee - Client (Apex Innovations Ltd.)
+        # 2.4 Zulkijlee - Client (UITS Tech Systems)
         zulkijlee_user, _ = User.objects.get_or_create(
             email='zulkijlee@client.com',
             defaults={
@@ -109,7 +109,7 @@ class Command(BaseCommand):
         zulkijlee_user.save()
         self.stdout.write(self.style.SUCCESS('Configured Client: Zulkijlee (zulkijlee@client.com, Pass: client123)'))
 
-        # 2.5 Client 2 - Elena Rostova (UITS Tech Systems)
+        # 2.5 Client 2 - Elena Rostova (Apex Innovations Ltd.)
         uits_user, _ = User.objects.get_or_create(
             email='uits@client.com',
             defaults={
@@ -121,56 +121,58 @@ class Command(BaseCommand):
         uits_user.save()
 
         # ─────────────────────────────────────────────────────────────
-        # 3. CLIENT PROFILES
+        # 3. CLIENT PROFILES (SWAPPED: ZULKIJLEE = UITS, ELENA = APEX)
         # ─────────────────────────────────────────────────────────────
         # Clean up any legacy client record with old email
         Client.objects.filter(email='client@portalhq.com').delete()
 
-        apex_client, _ = Client.objects.get_or_create(
+        uits_client, _ = Client.objects.get_or_create(
             email='zulkijlee@client.com',
             defaults={
                 'name': 'Zulkijlee',
-                'company_name': 'Apex Innovations Ltd.',
+                'company_name': 'UITS Tech Systems',
                 'phone': '+1 (555) 019-2834',
                 'address': '742 Evergreen Terrace, Suite 400, Springfield',
                 'status': 'ACTIVE',
-                'industry': 'Financial Technology',
-                'website': 'https://apexinnovations.example.com',
-                'notes': 'Key enterprise account with Zulkijlee. Focus on portal automation and security compliance.',
+                'industry': 'Enterprise Software & Technology',
+                'website': 'https://uitstech.example.com',
+                'notes': 'Key enterprise account with Zulkijlee at UITS Tech Systems. Focus on portal automation and security compliance.',
                 'user_account': zulkijlee_user,
             }
         )
-        apex_client.name = 'Zulkijlee'
-        apex_client.user_account = zulkijlee_user
-        apex_client.save()
+        uits_client.name = 'Zulkijlee'
+        uits_client.company_name = 'UITS Tech Systems'
+        uits_client.user_account = zulkijlee_user
+        uits_client.save()
 
-        uits_client, _ = Client.objects.get_or_create(
+        apex_client, _ = Client.objects.get_or_create(
             email='uits@client.com',
             defaults={
                 'name': 'Elena Rostova',
-                'company_name': 'UITS Tech Systems',
+                'company_name': 'Apex Innovations Ltd.',
                 'phone': '+1 (555) 014-9821',
                 'address': '1200 Innovation Parkway, Austin, TX',
                 'status': 'ACTIVE',
-                'industry': 'Enterprise Software',
-                'website': 'https://uitstech.example.com',
+                'industry': 'Financial Technology',
+                'website': 'https://apexinnovations.example.com',
                 'notes': 'Partner firm building mobile companion application.',
                 'user_account': uits_user,
             }
         )
-        if not uits_client.user_account:
-            uits_client.user_account = uits_user
-            uits_client.save()
+        apex_client.name = 'Elena Rostova'
+        apex_client.company_name = 'Apex Innovations Ltd.'
+        apex_client.user_account = uits_user
+        apex_client.save()
 
         # ─────────────────────────────────────────────────────────────
         # 4. PROJECTS & ASSIGNED STAFF (KHADIJA)
         # ─────────────────────────────────────────────────────────────
         today = date.today()
 
-        # Project 1: PortalHQ Modernization (Active)
+        # Project 1: PortalHQ Modernization (Active) - UITS Tech Systems
         p1, _ = Project.objects.get_or_create(
             title='Enterprise PortalHQ Modernization',
-            client=apex_client,
+            client=uits_client,
             defaults={
                 'description': 'Modernizing enterprise B2B workflows with custom dashboards, secure role-based portals, and live document tracking.',
                 'status': 'IN_PROGRESS',
@@ -180,12 +182,14 @@ class Command(BaseCommand):
                 'created_by': badhon_user,
             }
         )
+        p1.client = uits_client
+        p1.save()
         p1.assigned_employees.set([khadija_user])
 
-        # Project 2: Cloud Infrastructure Migration (Planned)
+        # Project 2: Cloud Infrastructure Migration (Planned) - UITS Tech Systems
         p2, _ = Project.objects.get_or_create(
             title='Cloud Infrastructure Migration',
-            client=apex_client,
+            client=uits_client,
             defaults={
                 'description': 'Migrating legacy monolithic services to containerized microservices and automated CI/CD pipeline.',
                 'status': 'PLANNED',
@@ -195,12 +199,14 @@ class Command(BaseCommand):
                 'created_by': badhon_user,
             }
         )
+        p2.client = uits_client
+        p2.save()
         p2.assigned_employees.set([khadija_user])
 
-        # Project 3: Mobile Client Companion App (Under Review)
+        # Project 3: Mobile Client Companion App (Under Review) - Apex Innovations Ltd.
         p3, _ = Project.objects.get_or_create(
             title='Mobile Client Companion App',
-            client=uits_client,
+            client=apex_client,
             defaults={
                 'description': 'Cross-platform mobile application providing real-time approval queues and meeting notifications.',
                 'status': 'UNDER_REVIEW',
@@ -210,6 +216,8 @@ class Command(BaseCommand):
                 'created_by': raghib_user,
             }
         )
+        p3.client = apex_client
+        p3.save()
         p3.assigned_employees.set([khadija_user])
 
         # ─────────────────────────────────────────────────────────────
@@ -306,7 +314,7 @@ class Command(BaseCommand):
         doc1, _ = Document.objects.get_or_create(
             title='PortalHQ Technical Architecture Specification v1.2',
             project=p1,
-            client=apex_client,
+            client=uits_client,
             defaults={
                 'category': 'DELIVERABLE',
                 'version': '1.2',
@@ -314,17 +322,19 @@ class Command(BaseCommand):
                 'is_shared_with_client': True,
             }
         )
+        doc1.client = uits_client
+        doc1.save()
         if not doc1.file:
             doc1.file.save(
                 'PortalHQ_Architecture_v1.2.txt',
-                ContentFile(b'PortalHQ Technical Architecture Specification v1.2\nAuthor: Khadija\nClient: Zulkijlee (Apex Innovations)\nStatus: Pending Review\n'),
+                ContentFile(b'PortalHQ Technical Architecture Specification v1.2\nAuthor: Khadija\nClient: Zulkijlee (UITS Tech Systems)\nStatus: Pending Review\n'),
                 save=True
             )
 
         doc2, _ = Document.objects.get_or_create(
             title='Master Service Agreement & SLA 2026',
             project=p1,
-            client=apex_client,
+            client=uits_client,
             defaults={
                 'category': 'CONTRACT',
                 'version': '1.0',
@@ -332,10 +342,12 @@ class Command(BaseCommand):
                 'is_shared_with_client': True,
             }
         )
+        doc2.client = uits_client
+        doc2.save()
         if not doc2.file:
             doc2.file.save(
                 'MSA_SLA_2026.txt',
-                ContentFile(b'Master Service Agreement & SLA 2026\nMaster Admin: Badhon\nClient: Zulkijlee (Apex Innovations Ltd.)\n'),
+                ContentFile(b'Master Service Agreement & SLA 2026\nMaster Admin: Badhon\nClient: Zulkijlee (UITS Tech Systems)\n'),
                 save=True
             )
 
@@ -356,7 +368,7 @@ class Command(BaseCommand):
                 'requested_by': badhon_user,
                 'reviewed_by': zulkijlee_user,
                 'status': 'APPROVED',
-                'comments': 'Approved by Zulkijlee. SLA terms accepted.',
+                'comments': 'Approved by Zulkijlee at UITS Tech Systems. SLA terms accepted.',
                 'reviewed_at': timezone.now() - timedelta(days=10),
             }
         )
@@ -366,7 +378,7 @@ class Command(BaseCommand):
         # ─────────────────────────────────────────────────────────────
         t1, _ = Ticket.objects.get_or_create(
             title='Need assistance with API webhook integration',
-            client=apex_client,
+            client=uits_client,
             project=p1,
             defaults={
                 'description': 'We are configuring the webhook endpoint on our staging server but encountering 403 Forbidden errors when receiving payload events.',
@@ -376,10 +388,12 @@ class Command(BaseCommand):
                 'assigned_to': khadija_user,
             }
         )
+        t1.client = uits_client
+        t1.save()
         TicketComment.objects.get_or_create(
             ticket=t1,
             author=zulkijlee_user,
-            content='Here is our staging callback URL: https://staging.apexinnovations.example.com/api/webhooks/',
+            content='Here is our staging callback URL: https://staging.uitstech.example.com/api/webhooks/',
         )
         TicketComment.objects.get_or_create(
             ticket=t1,
@@ -387,9 +401,9 @@ class Command(BaseCommand):
             content='Hi Zulkijlee! Khadija here from the delivery team. Please verify that your bearer secret matches the secret key in your organization settings.',
         )
 
-        Ticket.objects.get_or_create(
+        t2, _ = Ticket.objects.get_or_create(
             title='Request additional portal seat for technical lead',
-            client=apex_client,
+            client=uits_client,
             defaults={
                 'description': 'Please provision access for our incoming lead architect so they can monitor deliverables and participate in weekly reviews.',
                 'status': 'OPEN',
@@ -397,6 +411,8 @@ class Command(BaseCommand):
                 'created_by': zulkijlee_user,
             }
         )
+        t2.client = uits_client
+        t2.save()
 
         # ─────────────────────────────────────────────────────────────
         # 8. COMMUNICATIONS: MEETINGS, ANNOUNCEMENTS, NOTIFICATIONS
@@ -446,7 +462,7 @@ class Command(BaseCommand):
             title='Welcome to the PortalHQ Client Workspace',
             created_by=badhon_user,
             defaults={
-                'content': 'Welcome Zulkijlee and the Apex Innovations team. Here you can track active milestones, review deliverables, request approvals, and communicate with your project team in real time.',
+                'content': 'Welcome Zulkijlee and the UITS Tech Systems team. Here you can track active milestones, review deliverables, request approvals, and communicate with your project team in real time.',
                 'target_audience': 'CLIENTS',
             }
         )
@@ -479,4 +495,4 @@ class Command(BaseCommand):
             }
         )
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded team members: Badhon (Master Admin), Raghib (Admin), Khadija (Employee), Zulkijlee (Client)!'))
+        self.stdout.write(self.style.SUCCESS('Successfully seeded team members: Badhon (Master Admin), Raghib (Admin), Khadija (Employee), Zulkijlee (Client at UITS Tech Systems)!'))

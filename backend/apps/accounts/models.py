@@ -160,8 +160,10 @@ class User(AbstractBaseUser, PermissionsMixin):
             client = Client.objects.filter(email__iexact=self.email).first()
             if not client and self.role == 'CLIENT':
                 # Check if matching by contact name or alias client email
-                if self.email in ('client@portalhq.com', 'zulkijlee@client.com'):
-                    client = Client.objects.filter(company_name__icontains='Apex').first() or Client.objects.first()
+                if self.email in ('client@portalhq.com', 'zulkijlee@client.com') or 'zulkijlee' in self.full_name.lower():
+                    client = Client.objects.filter(company_name__icontains='UITS').first() or Client.objects.filter(name__icontains='Zulkijlee').first()
+                elif 'elena' in self.full_name.lower() or self.email == 'uits@client.com':
+                    client = Client.objects.filter(company_name__icontains='Apex').first() or Client.objects.filter(name__icontains='Elena').first()
                 else:
                     client = Client.objects.filter(name__iexact=self.full_name).first()
 
