@@ -70,9 +70,15 @@ export default function Header({ onMenuClick }) {
   };
 
   // Get user initials for the avatar
-  const initials = user
-    ? `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase()
-    : '?';
+  const initials = user?.full_name
+    ? user.full_name
+        .split(' ')
+        .filter(Boolean)
+        .map((n) => n[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : (user?.email?.[0] || '?').toUpperCase();
 
   // Determine notification path based on role
   const notifPath =
@@ -132,7 +138,7 @@ export default function Header({ onMenuClick }) {
             {initials}
           </div>
           <span className="hidden sm:block text-sm font-medium text-slate-700">
-            {user?.first_name}
+            {user?.full_name || user?.email || 'User'}
           </span>
           <ChevronDown size={14} className="text-slate-400" />
         </button>
@@ -149,7 +155,7 @@ export default function Header({ onMenuClick }) {
               {/* User info */}
               <div className="px-4 py-3 border-b border-slate-100">
                 <div className="text-sm font-semibold text-slate-800">
-                  {user?.first_name} {user?.last_name}
+                  {user?.full_name || 'User'}
                 </div>
                 <div className="text-xs text-slate-500 truncate">{user?.email}</div>
               </div>

@@ -8,6 +8,10 @@ import api from './axios';
 export const login = (email, password) =>
   api.post('/auth/login/', { email, password });
 
+/** Register a new user account. Returns access/refresh tokens and user info. */
+export const register = (data) =>
+  api.post('/auth/register/', data);
+
 /** Log out by invalidating the refresh token on the server. */
 export const logout = (refreshToken) =>
   api.post('/auth/logout/', { refresh: refreshToken });

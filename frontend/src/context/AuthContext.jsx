@@ -4,7 +4,7 @@
 // And trigger login/logout from anywhere.
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { getMe, login as apiLogin, logout as apiLogout } from '../api/auth';
+import { getMe, login as apiLogin, logout as apiLogout, register as apiRegister } from '../api/auth';
 import toast from 'react-hot-toast';
 
 // Create the context — think of it as a "global state box"
@@ -40,6 +40,15 @@ export function AuthProvider({ children }) {
     return res.data.user;
   };
 
+  /** Call this to register a new user and log them in immediately. */
+  const register = async (userData) => {
+    const res = await apiRegister(userData);
+    localStorage.setItem('access_token', res.data.access);
+    localStorage.setItem('refresh_token', res.data.refresh);
+    setUser(res.data.user);
+    return res.data.user;
+  };
+
   /** Call this to log the current user out. */
   const logout = async () => {
     const refresh = localStorage.getItem('refresh_token');
@@ -60,7 +69,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, logout, isAdmin, isEmployee, isClient, setUser }}
+      value={{ user, loading, login, register, logout, isAdmin, isEmployee, isClient, setUser }}
     >
       {children}
     </AuthContext.Provider>

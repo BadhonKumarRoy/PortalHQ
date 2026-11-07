@@ -84,18 +84,6 @@ class RegisterView(APIView):
                 'user': UserSerializer(user).data
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        serializer = RegisterSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        # Save the new user to the database
-        user = serializer.save()
-
-        return Response(
-            UserSerializer(user).data,
-            status=status.HTTP_201_CREATED
-        )
 
 
 class LogoutView(APIView):
