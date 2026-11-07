@@ -72,13 +72,40 @@ export default function ClientAdd() {
 
     setLoading(true);
     try {
-      await createClient(form);
+      // Auto-format website URL if provided without scheme
+      let website = form.website?.trim() || '';
+      if (website && !/^https?:\/\//i.test(website)) {
+        website = `https://${website}`;
+      }
+
+      const payload = {
+        ...form,
+        website,
+        name: form.contact_name?.trim(),
+        contact_name: form.contact_name?.trim(),
+      };
+
+      await createClient(payload);
       toast.success('Client added successfully!');
       navigate('/organization/clients');
     } catch (err) {
       const serverErrors = err.response?.data || {};
+      if (serverErrors.name && !serverErrors.contact_name) {
+        serverErrors.contact_name = Array.isArray(serverErrors.name)
+          ? serverErrors.name[0]
+          : serverErrors.name;
+      }
       setErrors(serverErrors);
-      toast.error('Failed to add client. Check the form for errors.');
+
+      const firstKey = Object.keys(serverErrors)[0];
+      const detailMsg =
+        serverErrors.detail ||
+        (firstKey && Array.isArray(serverErrors[firstKey])
+          ? `${firstKey}: ${serverErrors[firstKey][0]}`
+          : serverErrors[firstKey]) ||
+        'Failed to add client. Check the form for errors.';
+
+      toast.error(detailMsg);
     } finally {
       setLoading(false);
     }

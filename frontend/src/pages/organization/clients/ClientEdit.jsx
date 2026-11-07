@@ -54,7 +54,7 @@ export default function ClientEdit() {
       .then((res) => {
         const c = res.data;
         setForm({
-          contact_name: c.contact_name || '',
+          contact_name: c.contact_name || c.name || '',
           company_name: c.company_name || '',
           email: c.email || '',
           phone: c.phone || '',
@@ -93,12 +93,39 @@ export default function ClientEdit() {
 
     setLoading(true);
     try {
-      await updateClient(id, form);
+      let website = form.website?.trim() || '';
+      if (website && !/^https?:\/\//i.test(website)) {
+        website = `https://${website}`;
+      }
+
+      const payload = {
+        ...form,
+        website,
+        name: form.contact_name?.trim(),
+        contact_name: form.contact_name?.trim(),
+      };
+
+      await updateClient(id, payload);
       toast.success('Client updated successfully!');
       navigate(`/organization/clients/${id}`);
     } catch (err) {
-      setErrors(err.response?.data || {});
-      toast.error('Failed to update client.');
+      const serverErrors = err.response?.data || {};
+      if (serverErrors.name && !serverErrors.contact_name) {
+        serverErrors.contact_name = Array.isArray(serverErrors.name)
+          ? serverErrors.name[0]
+          : serverErrors.name;
+      }
+      setErrors(serverErrors);
+
+      const firstKey = Object.keys(serverErrors)[0];
+      const detailMsg =
+        serverErrors.detail ||
+        (firstKey && Array.isArray(serverErrors[firstKey])
+          ? `${firstKey}: ${serverErrors[firstKey][0]}`
+          : serverErrors[firstKey]) ||
+        'Failed to update client. Check the form for errors.';
+
+      toast.error(detailMsg);
     } finally {
       setLoading(false);
     }

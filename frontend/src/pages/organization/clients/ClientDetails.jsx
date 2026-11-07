@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Pencil, Mail, Phone, Globe, MapPin, Building2 } from 'lucide-react';
+import { Pencil, Mail, Phone, Globe, MapPin, Building2, User } from 'lucide-react';
 import { getClient } from '../../../api/clients';
 import { getProjects } from '../../../api/projects';
 import { getTickets } from '../../../api/tickets';
@@ -108,6 +108,7 @@ export default function ClientDetails() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card title="Contact Information">
             <div className="space-y-4">
+              <InfoRow icon={User} label="Contact Person" value={client.contact_name || client.name} />
               <InfoRow icon={Building2} label="Company" value={client.company_name} />
               <InfoRow icon={Mail} label="Email" value={client.email} />
               <InfoRow icon={Phone} label="Phone" value={client.phone} />

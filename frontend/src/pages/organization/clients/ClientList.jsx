@@ -46,7 +46,7 @@ export default function ClientList() {
       clients.filter(
         (c) =>
           c.company_name?.toLowerCase().includes(q) ||
-          c.contact_name?.toLowerCase().includes(q) ||
+          (c.contact_name || c.name)?.toLowerCase().includes(q) ||
           c.email?.toLowerCase().includes(q)
       )
     );
@@ -69,7 +69,11 @@ export default function ClientList() {
 
   const columns = [
     { key: 'company_name', label: 'Company' },
-    { key: 'contact_name', label: 'Contact Name' },
+    {
+      key: 'contact_name',
+      label: 'Contact Name',
+      render: (_, row) => row.contact_name || row.name || '—',
+    },
     { key: 'email', label: 'Email' },
     { key: 'industry', label: 'Industry' },
     {
