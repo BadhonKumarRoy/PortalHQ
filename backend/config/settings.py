@@ -152,6 +152,10 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'                    # URL prefix for media files
 MEDIA_ROOT = BASE_DIR / 'media'         # Physical folder where uploads are stored
 
+# Maximum upload limits (restricting uploads to small files under 500 KB)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 500 * 1024   # 500 KB limit for file memory
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024  # 1 MB total request body limit
+
 # ─────────────────────────────────────────────
 # DEFAULT AUTO FIELD
 # ─────────────────────────────────────────────

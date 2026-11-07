@@ -38,7 +38,10 @@ urlpatterns = [
     path('api/reports/', include('apps.reports.urls')),
 ]
 
-# In development, let Django serve uploaded media files
-# In production, your web server (nginx, etc.) handles this instead
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve uploaded media files (in development and in containerized production like Render)
+from django.urls import re_path
+from django.views.static import serve
+
+urlpatterns += [
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+]

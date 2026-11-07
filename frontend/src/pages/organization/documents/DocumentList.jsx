@@ -3,7 +3,13 @@
 // Full document repository: upload, categorize, track versions, and share files with clients.
 
 import { useState, useEffect, useCallback } from 'react';
-import { getDocuments, uploadDocument, deleteDocument } from '../../../api/documents';
+import {
+  getDocuments,
+  uploadDocument,
+  deleteDocument,
+  toggleShareDocument,
+  getFileUrl,
+} from '../../../api/documents';
 import { getClients } from '../../../api/clients';
 import { getProjects } from '../../../api/projects';
 
@@ -11,7 +17,6 @@ import PageHeader from '../../../components/ui/PageHeader';
 import Card from '../../../components/ui/Card';
 import StatCard from '../../../components/ui/StatCard';
 import Button from '../../../components/ui/Button';
-import Badge from '../../../components/ui/Badge';
 import Modal from '../../../components/ui/Modal';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -27,10 +32,15 @@ import {
   Building2,
   FileCheck,
   ShieldCheck,
-  Layers,
+  Lock,
+  Share2,
+  AlertCircle,
 } from 'lucide-react';
 
-const CATEGORY_TABS = ['All', 'Deliverable', 'Specification', 'Contract', 'Invoice', 'Other'];
+const CATEGORY_TABS = ['All', 'Deliverable', 'Specification', 'Contract', 'Invoice', 'Report', 'Other'];
+
+// 500 KB upload restriction
+const MAX_FILE_SIZE_BYTES = 500 * 1024; // 500 KB
 
 export default function DocumentList() {
   const [loading, setLoading] = useState(true);
@@ -46,7 +56,7 @@ export default function DocumentList() {
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
-    category: 'Deliverable',
+    category: 'DELIVERABLE',
     client: '',
     project: '',
     version: '1.0',
@@ -94,6 +104,24 @@ export default function DocumentList() {
     fetchData();
   }, [fetchData]);
 
+  // Handle file selection with 500 KB limit validation
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      setFormData((prev) => ({ ...prev, file: null }));
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      toast.error(
+        `File size (${(file.size / 1024).toFixed(1)} KB) exceeds the maximum allowed limit of 500 KB. Please select a smaller file.`
+      );
+      e.target.value = '';
+      setFormData((prev) => ({ ...prev, file: null }));
+      return;
+    }
+    setFormData((prev) => ({ ...prev, file }));
+  };
+
   // Handle document upload
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -102,7 +130,11 @@ export default function DocumentList() {
       return;
     }
     if (!formData.file) {
-      toast.error('Please choose a file to upload.');
+      toast.error('Please choose a file under 500 KB to upload.');
+      return;
+    }
+    if (formData.file.size > MAX_FILE_SIZE_BYTES) {
+      toast.error('File size exceeds the 500 KB limit.');
       return;
     }
 
@@ -122,7 +154,7 @@ export default function DocumentList() {
       setUploadModalOpen(false);
       setFormData({
         title: '',
-        category: 'Deliverable',
+        category: 'DELIVERABLE',
         client: '',
         project: '',
         version: '1.0',
@@ -132,9 +164,30 @@ export default function DocumentList() {
       fetchData();
     } catch (err) {
       console.error('Upload error:', err);
-      toast.error('Failed to upload document.');
+      const errMsg =
+        err.response?.data?.file?.[0] ||
+        err.response?.data?.detail ||
+        'Failed to upload document. Please ensure the file is under 500 KB.';
+      toast.error(errMsg);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // 1-Click Document Sharing Toggle
+  const handleToggleShare = async (docId, title, currentStatus) => {
+    try {
+      const res = await toggleShareDocument(docId);
+      const newStatus = res.data?.is_shared_with_client ?? !currentStatus;
+      toast.success(
+        newStatus
+          ? `"${title}" is now shared with client.`
+          : `"${title}" is now internal only.`
+      );
+      fetchData();
+    } catch (err) {
+      console.error('Toggle share error:', err);
+      toast.error('Failed to update document sharing status.');
     }
   };
 
@@ -155,8 +208,10 @@ export default function DocumentList() {
 
   // Filter documents
   const filteredDocs = documents.filter((doc) => {
-    const matchesCategory =
-      activeCategory === 'All' || doc.category === activeCategory;
+    const docCat = (doc.category_display || doc.category || '').toUpperCase();
+    const tabUpper = activeCategory.toUpperCase();
+    const matchesCategory = activeCategory === 'All' || docCat === tabUpper;
+
     const matchesSearch =
       !searchQuery ||
       doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -168,10 +223,14 @@ export default function DocumentList() {
 
   const sharedCount = documents.filter((d) => d.is_shared_with_client).length;
   const deliverableCount = documents.filter(
-    (d) => d.category === 'Deliverable' || d.category === 'Specification'
+    (d) =>
+      (d.category || '').toUpperCase() === 'DELIVERABLE' ||
+      (d.category || '').toUpperCase() === 'SPECIFICATION'
   ).length;
   const contractCount = documents.filter(
-    (d) => d.category === 'Contract' || d.category === 'Invoice'
+    (d) =>
+      (d.category || '').toUpperCase() === 'CONTRACT' ||
+      (d.category || '').toUpperCase() === 'INVOICE'
   ).length;
 
   return (
@@ -271,7 +330,7 @@ export default function DocumentList() {
           <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
             {searchQuery || activeCategory !== 'All'
               ? 'No documents match your filter criteria.'
-              : 'Start by uploading your first contract, deliverable, or project spec.'}
+              : 'Start by uploading your first contract, deliverable, or project spec (max 500 KB).'}
           </p>
           <Button
             variant="secondary"
@@ -292,14 +351,15 @@ export default function DocumentList() {
                   <th className="py-3.5 px-4">Category</th>
                   <th className="py-3.5 px-4">Client</th>
                   <th className="py-3.5 px-4">Project</th>
-                  <th className="py-3.5 px-4">Portal Visibility</th>
+                  <th className="py-3.5 px-4">Portal Visibility (Click to Toggle)</th>
                   <th className="py-3.5 px-4">Date Uploaded</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredDocs.map((doc) => {
-                  const downloadUrl = doc.file_url || doc.file;
+                  const rawUrl = doc.file_url || doc.file;
+                  const downloadUrl = getFileUrl(rawUrl);
 
                   return (
                     <tr key={doc.id} className="hover:bg-slate-50/70 transition">
@@ -321,7 +381,7 @@ export default function DocumentList() {
 
                       <td className="py-3.5 px-4">
                         <span className="inline-block px-2.5 py-0.5 rounded-full font-semibold text-[11px] bg-blue-50 text-blue-700">
-                          {doc.category || 'General'}
+                          {doc.category_display || doc.category || 'General'}
                         </span>
                       </td>
 
@@ -346,14 +406,30 @@ export default function DocumentList() {
                         )}
                       </td>
 
+                      {/* 1-Click Toggle for Portal Sharing */}
                       <td className="py-3.5 px-4">
-                        {doc.is_shared_with_client ? (
-                          <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full text-[11px]">
-                            <ShieldCheck size={12} /> Shared
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 text-[11px]">Internal Only</span>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleShare(doc.id, doc.title, doc.is_shared_with_client)}
+                          className={`inline-flex items-center gap-1.5 font-semibold text-[11px] px-2.5 py-1 rounded-full transition-all cursor-pointer shadow-xs ${
+                            doc.is_shared_with_client
+                              ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'
+                              : 'text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200'
+                          }`}
+                          title="Click to toggle client portal visibility"
+                        >
+                          {doc.is_shared_with_client ? (
+                            <>
+                              <ShieldCheck size={13} className="text-emerald-600" />
+                              <span>Shared with Client</span>
+                            </>
+                          ) : (
+                            <>
+                              <Lock size={12} className="text-slate-400" />
+                              <span>Internal Only</span>
+                            </>
+                          )}
+                        </button>
                       </td>
 
                       <td className="py-3.5 px-4 text-slate-400 text-[11px]">
@@ -361,7 +437,25 @@ export default function DocumentList() {
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
-                        <div className="inline-flex items-center gap-2">
+                        <div className="inline-flex items-center gap-1.5">
+                          {/* Toggle Share Button */}
+                          <button
+                            onClick={() => handleToggleShare(doc.id, doc.title, doc.is_shared_with_client)}
+                            className={`p-1.5 rounded-lg transition ${
+                              doc.is_shared_with_client
+                                ? 'text-emerald-600 hover:bg-emerald-50'
+                                : 'text-slate-400 hover:text-emerald-600 hover:bg-slate-100'
+                            }`}
+                            title={
+                              doc.is_shared_with_client
+                                ? 'Currently visible to client (click to make internal)'
+                                : 'Share with client in portal'
+                            }
+                          >
+                            <Share2 size={15} />
+                          </button>
+
+                          {/* Download Button */}
                           {downloadUrl && (
                             <a
                               href={downloadUrl}
@@ -373,6 +467,8 @@ export default function DocumentList() {
                               <Download size={15} />
                             </a>
                           )}
+
+                          {/* Delete Button */}
                           <button
                             onClick={() => handleDelete(doc.id, doc.title)}
                             className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
@@ -422,11 +518,12 @@ export default function DocumentList() {
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500"
               >
-                <option value="Deliverable">Deliverable</option>
-                <option value="Specification">Specification</option>
-                <option value="Contract">Contract</option>
-                <option value="Invoice">Invoice</option>
-                <option value="Other">Other</option>
+                <option value="DELIVERABLE">Deliverable</option>
+                <option value="SPECIFICATION">Specification</option>
+                <option value="CONTRACT">Contract</option>
+                <option value="REPORT">Report</option>
+                <option value="INVOICE">Invoice</option>
+                <option value="OTHER">Other</option>
               </select>
             </div>
 
@@ -454,7 +551,7 @@ export default function DocumentList() {
                 onChange={(e) => setFormData({ ...formData, client: e.target.value })}
                 className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500"
               >
-                <option value="">No Client (Internal)</option>
+                <option value="">No Client (All Clients if Shared)</option>
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.company_name}
@@ -483,27 +580,44 @@ export default function DocumentList() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
-              Select Document File <span className="text-red-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                Select Document File <span className="text-red-500">*</span>
+              </label>
+              <span className="text-[11px] font-medium text-amber-600 flex items-center gap-1">
+                <AlertCircle size={12} /> Max 500 KB limit
+              </span>
+            </div>
             <input
               type="file"
-              onChange={(e) => setFormData({ ...formData, file: e.target.files[0] })}
+              onChange={handleFileChange}
               className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
               required
             />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Supports lightweight documents (PDF, TXT, DOCX, PNG) up to <strong>500 KB</strong>.
+            </p>
+            {formData.file && (
+              <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
+                <FileCheck size={13} />
+                <span className="truncate max-w-[200px]">{formData.file.name}</span>
+                <span className="text-[10px] text-blue-500 font-mono">
+                  ({(formData.file.size / 1024).toFixed(1)} KB)
+                </span>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-center gap-2 pt-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
             <input
               type="checkbox"
               id="sharedCheck"
               checked={formData.is_shared_with_client}
               onChange={(e) => setFormData({ ...formData, is_shared_with_client: e.target.checked })}
-              className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4"
+              className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
             />
-            <label htmlFor="sharedCheck" className="text-xs text-slate-700 font-medium">
-              Share this file directly with the client in their portal
+            <label htmlFor="sharedCheck" className="text-xs text-slate-700 font-medium cursor-pointer">
+              Share this file directly with client in their portal
             </label>
           </div>
 

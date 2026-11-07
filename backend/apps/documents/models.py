@@ -22,10 +22,12 @@ class Document(models.Model):
     """
 
     CATEGORY_CHOICES = [
-        ('DELIVERABLE', 'Deliverable'),  # Finished work product
-        ('CONTRACT', 'Contract'),         # Legal agreement
-        ('REPORT', 'Report'),             # Status or financial report
-        ('OTHER', 'Other'),               # Anything else
+        ('DELIVERABLE', 'Deliverable'),      # Finished work product
+        ('SPECIFICATION', 'Specification'),  # Technical / project specification
+        ('CONTRACT', 'Contract'),            # Legal agreement
+        ('REPORT', 'Report'),                # Status or financial report
+        ('INVOICE', 'Invoice'),              # Billing and invoices
+        ('OTHER', 'Other'),                  # General document
     ]
 
     # ── Document Info ─────────────────────────────────────────────────────

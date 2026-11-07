@@ -3,7 +3,7 @@
 // Displays deliverables, contracts, specifications, and invoices shared with this client.
 
 import { useState, useEffect, useCallback } from 'react';
-import { getDocuments } from '../../../api/documents';
+import { getDocuments, getFileUrl } from '../../../api/documents';
 
 import PageHeader from '../../../components/ui/PageHeader';
 import Card from '../../../components/ui/Card';
@@ -17,7 +17,7 @@ import {
   Calendar,
   FolderOpen,
   FileCheck,
-  ExternalLink,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function ClientDocuments() {
@@ -43,19 +43,19 @@ export default function ClientDocuments() {
   }, [fetchDocs]);
 
   const filteredDocs = documents.filter((doc) => {
-    return (
-      !searchQuery ||
-      doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (doc.category && doc.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (doc.project_title && doc.project_title.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const cat = (doc.category_display || doc.category || '').toLowerCase();
+    const title = (doc.title || '').toLowerCase();
+    const proj = (doc.project_title || '').toLowerCase();
+    const q = searchQuery.toLowerCase();
+
+    return !q || title.includes(q) || cat.includes(q) || proj.includes(q);
   });
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Shared Documents"
-        subtitle="Access and download project specifications, signed contracts, and deliverables."
+        subtitle="Access and download project specifications, signed contracts, and deliverables shared with your company."
       />
 
       {/* Search Bar */}
@@ -64,7 +64,7 @@ export default function ClientDocuments() {
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search documents by name or project..."
+            placeholder="Search documents by name, category, or project..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 transition"
@@ -88,13 +88,14 @@ export default function ClientDocuments() {
           <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
             {searchQuery
               ? `No documents matched "${searchQuery}".`
-              : 'Files and contract documents shared by your agency will appear here for download.'}
+              : 'Files and project deliverables shared by your agency will appear here for download.'}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredDocs.map((doc) => {
-            const downloadUrl = doc.file_url || doc.file;
+            const rawUrl = doc.file_url || doc.file;
+            const downloadUrl = getFileUrl(rawUrl);
 
             return (
               <Card
@@ -117,9 +118,9 @@ export default function ClientDocuments() {
                     {doc.title}
                   </h3>
 
-                  {doc.category && (
+                  {(doc.category_display || doc.category) && (
                     <span className="inline-block text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full mb-3">
-                      {doc.category}
+                      {doc.category_display || doc.category}
                     </span>
                   )}
 
@@ -138,7 +139,9 @@ export default function ClientDocuments() {
                 </div>
 
                 <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-400">Shared with you</span>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    <ShieldCheck size={12} /> Shared
+                  </span>
                   {downloadUrl ? (
                     <a
                       href={downloadUrl}
