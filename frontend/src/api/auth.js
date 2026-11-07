@@ -15,6 +15,10 @@ export const logout = (refreshToken) =>
 /** Get the currently logged-in user's profile. */
 export const getMe = () => api.get('/auth/me/');
 
+/** Change current logged-in user's password (Any role: Admin, Employee, Client). */
+export const changePassword = (data) =>
+  api.post('/auth/change-password/', data);
+
 /** Get a list of all users (Admin only). */
 export const getUsers = () => api.get('/auth/users/');
 
