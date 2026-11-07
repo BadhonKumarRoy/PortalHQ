@@ -4,25 +4,22 @@
 # All these URLs are prefixed with /api/auth/ (defined in config/urls.py).
 
 from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView  # Built-in JWT refresh view
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from apps.accounts.views import (
     LoginView,
-    RegisterView,
     LogoutView,
     MeView,
     ChangePasswordView,
     UserListView,
     UserDetailView,
+    AdminResetPasswordView,
 )
 
 urlpatterns = [
     # ── Authentication Endpoints ─────────────────────────────────────────
     path('login/', LoginView.as_view(), name='auth-login'),
-    path('register/', RegisterView.as_view(), name='auth-register'),
     path('logout/', LogoutView.as_view(), name='auth-logout'),
-
-    # Refresh an expired access token using a valid refresh token
     path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
 
     # ── Current User Profile ─────────────────────────────────────────────
@@ -32,4 +29,5 @@ urlpatterns = [
     # ── User Management (Admin Only) ─────────────────────────────────────
     path('users/', UserListView.as_view(), name='user-list'),
     path('users/<int:pk>/', UserDetailView.as_view(), name='user-detail'),
+    path('users/<int:pk>/reset-password/', AdminResetPasswordView.as_view(), name='user-reset-password'),
 ]

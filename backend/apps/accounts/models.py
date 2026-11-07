@@ -119,6 +119,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         return f"{self.full_name} ({self.email})"
 
     @property
+    def is_master_admin(self):
+        """Convenience property: True if this user is the permanent Master Admin."""
+        return bool(self.is_superuser or self.email == 'admin@portalhq.com')
+
+    @property
     def is_admin(self):
         """Convenience property: True if this user is an Organization Admin."""
         return self.role == 'ADMIN'
@@ -132,3 +137,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     def is_client_user(self):
         """Convenience property: True if this user is a Client."""
         return self.role == 'CLIENT'
+
+    def delete(self, *args, **kwargs):
+        """
+        Database-level safety lock:
+        The Master Admin account is permanently immune to deletion.
+        """
+        if self.is_master_admin:
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("The Master Admin account is permanently protected and cannot be deleted.")
+        super().delete(*args, **kwargs)

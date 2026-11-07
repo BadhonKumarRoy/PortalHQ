@@ -28,6 +28,7 @@ class ClientSerializer(serializers.ModelSerializer):
     """
     name = serializers.CharField(required=False)
     contact_name = serializers.CharField(source='name', required=False)
+    temp_password = serializers.CharField(read_only=True, required=False)
 
     # Include the linked user's email in responses (read-only, for display)
     user_email = serializers.EmailField(
@@ -40,10 +41,10 @@ class ClientSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'contact_name', 'company_name', 'email', 'phone', 'address',
             'status', 'industry', 'website', 'notes',
-            'user_account', 'user_email',
+            'user_account', 'user_email', 'temp_password',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'user_email']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'user_email', 'temp_password']
 
     def validate(self, attrs):
         # Support both 'name' and 'contact_name' seamlessly

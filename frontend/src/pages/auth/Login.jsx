@@ -1,29 +1,25 @@
 // src/pages/auth/Login.jsx
-// Enterprise Authentication Page: Secure Sign In & Sign Up
+// Enterprise Authentication Page: Secure Sign In
 // Connects directly to Django REST Framework JWT endpoints.
+// Protected by rate-limiting, brute-force protection, and OWASP-compliant security.
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { Mail, Lock, User, ArrowRight, Loader2, ShieldCheck, BarChart3, FolderKanban } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, ShieldCheck, BarChart3, FolderKanban, Info } from 'lucide-react';
 
 export default function Login() {
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Mode: false = 'Sign In', true = 'Create Account'
-  const [isSignUp, setIsSignUp] = useState(false);
-
-  // Form fields
-  const [fullName, setFullName] = useState('');
+  // Form input states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('ADMIN');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  /** Redirect user based on their assigned role */
+  /** Redirect authenticated user to their role-specific dashboard */
   const redirectUser = (user) => {
     if (user.role === 'ADMIN') navigate('/organization/dashboard');
     else if (user.role === 'EMPLOYEE') navigate('/employee/dashboard');
@@ -31,58 +27,30 @@ export default function Login() {
     else navigate('/');
   };
 
-  /** Handle Form Submission (Sign In or Sign Up) */
+  /** Handle Sign-In submission */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Basic front-end validation
     if (!email.trim() || !password) {
       setError('Please provide both your email address and password.');
-      return;
-    }
-
-    if (isSignUp && !fullName.trim()) {
-      setError('Please provide your full name to create an account.');
-      return;
-    }
-
-    if (isSignUp && password.length < 8) {
-      setError('Password must be at least 8 characters long.');
       return;
     }
 
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        // Register new user account
-        const newUser = await register({
-          email: email.trim(),
-          full_name: fullName.trim(),
-          password,
-          role,
-        });
-        toast.success(`Welcome to PortalHQ, ${newUser.full_name || 'User'}!`);
-        redirectUser(newUser);
-      } else {
-        // Sign in existing user
-        const user = await login(email.trim(), password);
-        toast.success(`Welcome back, ${user.full_name || 'User'}!`);
-        redirectUser(user);
-      }
+      const user = await login(email.trim(), password);
+      toast.success(`Welcome back, ${user.full_name || 'User'}!`);
+      redirectUser(user);
     } catch (err) {
       console.error('Authentication error:', err);
       const data = err.response?.data;
-      let msg = 'Authentication failed. Please verify your details.';
+      let msg = 'Invalid email or password.';
 
       if (data) {
         if (typeof data.detail === 'string') {
           msg = data.detail;
-        } else if (Array.isArray(data.email)) {
-          msg = data.email[0];
-        } else if (Array.isArray(data.password)) {
-          msg = data.password[0];
         } else if (Array.isArray(data.non_field_errors)) {
           msg = data.non_field_errors[0];
         } else if (typeof data === 'string') {
@@ -192,47 +160,13 @@ export default function Login() {
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 sm:p-8">
-            {/* Tab Switcher: Sign In vs Sign Up */}
-            <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl mb-6">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(false);
-                  setError('');
-                }}
-                className={`py-2 text-sm font-semibold rounded-lg transition-all ${
-                  !isSignUp
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(true);
-                  setError('');
-                }}
-                className={`py-2 text-sm font-semibold rounded-lg transition-all ${
-                  isSignUp
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                Create Account
-              </button>
-            </div>
-
-            {/* Header copy */}
+            {/* Form Header */}
             <div className="mb-6">
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
-                {isSignUp ? 'Create your account' : 'Welcome back'}
+              <h2 className="text-2xl font-bold text-slate-800">
+                Sign In
               </h2>
-              <p className="text-slate-500 text-xs sm:text-sm mt-1">
-                {isSignUp
-                  ? 'Enter your details to create an account and join PortalHQ.'
-                  : 'Enter your email and password to access your dashboard.'}
+              <p className="text-slate-500 text-sm mt-1">
+                Enter your credentials to access your secure portal workspace.
               </p>
             </div>
 
@@ -242,24 +176,6 @@ export default function Login() {
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-3 rounded-xl leading-relaxed">
                   {error}
-                </div>
-              )}
-
-              {/* Full Name field (Sign Up only) */}
-              {isSignUp && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-slate-700">Full Name</label>
-                  <div className="relative">
-                    <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Jane Doe"
-                      required={isSignUp}
-                      className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition outline-none"
-                    />
-                  </div>
                 </div>
               )}
 
@@ -281,12 +197,7 @@ export default function Login() {
 
               {/* Password field */}
               <div className="flex flex-col gap-1">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-semibold text-slate-700">Password</label>
-                  {isSignUp && (
-                    <span className="text-[11px] text-slate-400">Min. 8 characters</span>
-                  )}
-                </div>
+                <label className="text-xs font-semibold text-slate-700">Password</label>
                 <div className="relative">
                   <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
@@ -300,22 +211,6 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Role Selection (Sign Up only) */}
-              {isSignUp && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-slate-700">Account Role</label>
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition bg-white outline-none cursor-pointer"
-                  >
-                    <option value="ADMIN">Organization Admin</option>
-                    <option value="EMPLOYEE">Staff / Employee</option>
-                    <option value="CLIENT">Client</option>
-                  </select>
-                </div>
-              )}
-
               {/* Submit Button */}
               <button
                 type="submit"
@@ -326,32 +221,23 @@ export default function Login() {
                 {loading ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                    Signing In...
                   </>
                 ) : (
                   <>
-                    {isSignUp ? 'Create Account' : 'Sign In'}
+                    Sign In to Portal
                     <ArrowRight size={16} />
                   </>
                 )}
               </button>
             </form>
 
-            {/* Bottom switcher helper */}
-            <div className="mt-6 text-center">
-              <p className="text-xs text-slate-500">
-                {isSignUp ? 'Already registered? ' : "Don't have an account yet? "}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSignUp(!isSignUp);
-                    setError('');
-                  }}
-                  className="font-semibold text-teal-600 hover:text-teal-700 underline cursor-pointer"
-                >
-                  {isSignUp ? 'Sign In here' : 'Sign Up for free'}
-                </button>
-              </p>
+            {/* Closed-Portal Security Notice */}
+            <div className="mt-8 pt-6 border-t border-slate-100 flex items-start gap-2.5 text-xs text-slate-500 leading-relaxed bg-slate-50/80 -mx-6 -mb-6 p-4 rounded-b-2xl">
+              <Info size={16} className="text-slate-400 shrink-0 mt-0.5" />
+              <span>
+                <strong>Invite-Only Portal:</strong> Account registration is managed exclusively by organization administrators. If you need access or forgot your credentials, please contact your administrator.
+              </span>
             </div>
           </div>
         </div>

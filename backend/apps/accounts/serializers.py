@@ -16,15 +16,16 @@ class UserSerializer(serializers.ModelSerializer):
     Used when returning user details in API responses.
     Password is excluded from output for security.
     """
+    is_master_admin = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
         fields = [
             'id', 'email', 'full_name', 'role',
-            'phone', 'is_active', 'is_staff', 'date_joined'
+            'phone', 'is_active', 'is_staff', 'is_superuser', 'is_master_admin', 'date_joined'
         ]
         # These fields are returned but cannot be changed via this serializer
-        read_only_fields = ['id', 'date_joined', 'is_staff']
+        read_only_fields = ['id', 'date_joined', 'is_staff', 'is_superuser', 'is_master_admin']
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -81,15 +82,16 @@ class LoginSerializer(serializers.Serializer):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise serializers.ValidationError('No account found with this email address.')
+            # OWASP standard: Generic error message prevents email enumeration
+            raise serializers.ValidationError('Invalid email or password.')
 
         # Check the password
         if not user.check_password(password):
-            raise serializers.ValidationError('Incorrect password. Please try again.')
+            raise serializers.ValidationError('Invalid email or password.')
 
         # Check if the account is active
         if not user.is_active:
-            raise serializers.ValidationError('This account has been deactivated.')
+            raise serializers.ValidationError('This account has been deactivated. Please contact your administrator.')
 
         # Attach the user to validated_data so the view can access it
         data['user'] = user
