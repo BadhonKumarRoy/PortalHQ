@@ -121,7 +121,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_master_admin(self):
         """Convenience property: True if this user is the permanent Master Admin."""
-        return bool(self.is_superuser or self.email == 'admin@portalhq.com')
+        return bool(self.is_superuser or self.email in ('admin@portalhq.com', 'badhon@portalhq.com'))
 
     @property
     def is_admin(self):

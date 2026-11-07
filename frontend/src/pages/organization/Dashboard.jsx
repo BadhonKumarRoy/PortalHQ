@@ -105,7 +105,7 @@ export default function OrgDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">
-            {greeting}, {user?.full_name?.split(' ')?.[0] || 'Admin'}! 👋
+            {greeting}, {user?.full_name?.split(' ')?.[0] || 'Admin'}!
           </h2>
           <p className="text-slate-500 mt-1">Here's what's happening in your organization today.</p>
         </div>

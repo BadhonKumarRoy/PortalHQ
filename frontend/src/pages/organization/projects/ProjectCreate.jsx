@@ -58,8 +58,10 @@ export default function ProjectCreate() {
         const staffList = data.filter((u) => u.role === 'EMPLOYEE' || u.role === 'ADMIN');
         setEmployees(staffList);
 
-        // Pre-select the default staff member (e.g. employee@portalhq.com) if found
-        const defaultEmp = staffList.find((u) => u.email === 'employee@portalhq.com');
+        // Pre-select the default staff member (e.g. Khadija / employee@portalhq.com) if found
+        const defaultEmp = staffList.find(
+          (u) => u.email === 'employee@portalhq.com' || u.email === 'khadija@portalhq.com'
+        );
         if (defaultEmp) {
           setForm((prev) => ({
             ...prev,

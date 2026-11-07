@@ -54,7 +54,7 @@ export function AuthProvider({ children }) {
   };
 
   // Convenience boolean flags so components don't have to check user.role directly
-  const isMasterAdmin = Boolean(user?.is_master_admin || user?.is_superuser || user?.email === 'admin@portalhq.com');
+  const isMasterAdmin = Boolean(user?.is_master_admin || user?.is_superuser || user?.email === 'admin@portalhq.com' || user?.email === 'badhon@portalhq.com');
   const isAdmin = user?.role === 'ADMIN' || isMasterAdmin;
   const isEmployee = user?.role === 'EMPLOYEE';
   const isClient = user?.role === 'CLIENT';

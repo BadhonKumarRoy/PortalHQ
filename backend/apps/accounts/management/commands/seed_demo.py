@@ -1,18 +1,19 @@
 """
-Command to seed initial demo users and realistic testing data:
-- Users & Clients:
-  - admin@portalhq.com (Password: admin123) -> Organization Admin
-  - employee@portalhq.com (Password: emp123) -> Staff / Employee
-  - client@portalhq.com (Password: client123) -> Client (Apex Innovations Ltd.)
-  - uits@client.com (Password: client123) -> Client (UITS Tech Systems)
+Command to seed initial team members and realistic testing data:
+- Team Members & Roles:
+  - Badhon -> Master Admin (admin@portalhq.com & badhon@portalhq.com, Pass: admin123)
+  - Raghib -> Organization Admin (raghib@portalhq.com, Pass: admin123)
+  - Khadija -> Employee / Staff (employee@portalhq.com & khadija@portalhq.com, Pass: emp123)
+  - Zulkijlee -> Client (client@portalhq.com & zulkijlee@client.com, Pass: client123, Apex Innovations Ltd.)
+  - Client 2 -> Elena Rostova (uits@client.com, Pass: client123, UITS Tech Systems)
 - Projects:
-  - Enterprise PortalHQ Modernization (Active, Milestones, Tasks)
-  - Cloud Infrastructure Migration (Planned)
-  - Mobile Client Companion App (Under Review)
-- Milestones & Tasks
-- Support Tickets & Comments
-- Documents & Approval Requests
-- Communication: Meetings, Announcements, and Notifications
+  - Enterprise PortalHQ Modernization (Active, Milestones, Tasks - Assigned to Khadija)
+  - Cloud Infrastructure Migration (Planned - Assigned to Khadija)
+  - Mobile Client Companion App (Under Review - Assigned to Khadija)
+- Milestones & Actionable Tasks
+- Support Tickets & Real-Time Comments (Zulkijlee & Khadija)
+- Documents & Approval Requests (Uploaded by Khadija, reviewed by Zulkijlee)
+- Communication: Meetings, Announcements, and System Notifications
 """
 from datetime import date, timedelta
 from django.core.management.base import BaseCommand
@@ -30,76 +31,131 @@ from apps.communication.models import Announcement, Meeting, Notification
 
 
 class Command(BaseCommand):
-    help = 'Seeds initial demo users and comprehensive testing entries for all portals'
+    help = 'Seeds team members (Badhon, Raghib, Khadija, Zulkijlee) and comprehensive testing entries'
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.NOTICE('Starting PortalHQ demo database seeding...'))
+        self.stdout.write(self.style.NOTICE('Starting PortalHQ demo database seeding with team members...'))
 
         # ─────────────────────────────────────────────────────────────
-        # 1. CORE USERS
+        # 1. TEAM MEMBERS & CORE USERS
         # ─────────────────────────────────────────────────────────────
-        # 1.1 Admin User
+        # 1.1 Badhon - Master Admin (Primary: admin@portalhq.com, Named: badhon@portalhq.com)
         admin_user, created = User.objects.get_or_create(
             email='admin@portalhq.com',
             defaults={
-                'full_name': 'Sarah Admin',
+                'full_name': 'Badhon',
                 'role': 'ADMIN',
                 'is_staff': True,
                 'is_superuser': True,
             }
         )
-        if created:
-            admin_user.set_password('admin123')
-            admin_user.save()
-            self.stdout.write(self.style.SUCCESS('Created Admin: admin@portalhq.com (Pass: admin123)'))
-        else:
-            self.stdout.write('Admin admin@portalhq.com ready.')
+        admin_user.full_name = 'Badhon'
+        admin_user.role = 'ADMIN'
+        admin_user.is_staff = True
+        admin_user.is_superuser = True
+        admin_user.set_password('admin123')
+        admin_user.save()
 
-        # 1.2 Employee User
-        emp_user, created = User.objects.get_or_create(
+        badhon_user, _ = User.objects.get_or_create(
+            email='badhon@portalhq.com',
+            defaults={
+                'full_name': 'Badhon',
+                'role': 'ADMIN',
+                'is_staff': True,
+                'is_superuser': True,
+            }
+        )
+        badhon_user.full_name = 'Badhon'
+        badhon_user.role = 'ADMIN'
+        badhon_user.is_staff = True
+        badhon_user.is_superuser = True
+        badhon_user.set_password('admin123')
+        badhon_user.save()
+        self.stdout.write(self.style.SUCCESS('Configured Master Admin: Badhon (admin@portalhq.com / badhon@portalhq.com, Pass: admin123)'))
+
+        # 1.2 Raghib - Organization Admin
+        raghib_user, _ = User.objects.get_or_create(
+            email='raghib@portalhq.com',
+            defaults={
+                'full_name': 'Raghib',
+                'role': 'ADMIN',
+                'is_staff': True,
+                'is_superuser': False,
+            }
+        )
+        raghib_user.full_name = 'Raghib'
+        raghib_user.role = 'ADMIN'
+        raghib_user.is_staff = True
+        raghib_user.set_password('admin123')
+        raghib_user.save()
+        self.stdout.write(self.style.SUCCESS('Configured Admin: Raghib (raghib@portalhq.com, Pass: admin123)'))
+
+        # 1.3 Khadija - Employee / Staff Member (Primary: employee@portalhq.com, Named: khadija@portalhq.com)
+        emp_user, _ = User.objects.get_or_create(
             email='employee@portalhq.com',
             defaults={
-                'full_name': 'David Staff',
+                'full_name': 'Khadija',
                 'role': 'EMPLOYEE',
                 'is_staff': True,
             }
         )
-        if created:
-            emp_user.set_password('emp123')
-            emp_user.save()
-            self.stdout.write(self.style.SUCCESS('Created Employee: employee@portalhq.com (Pass: emp123)'))
-        else:
-            self.stdout.write('Employee employee@portalhq.com ready.')
+        emp_user.full_name = 'Khadija'
+        emp_user.role = 'EMPLOYEE'
+        emp_user.is_staff = True
+        emp_user.set_password('emp123')
+        emp_user.save()
 
-        # 1.3 Client User 1 (Apex Innovations)
-        client_user, created = User.objects.get_or_create(
+        khadija_user, _ = User.objects.get_or_create(
+            email='khadija@portalhq.com',
+            defaults={
+                'full_name': 'Khadija',
+                'role': 'EMPLOYEE',
+                'is_staff': True,
+            }
+        )
+        khadija_user.full_name = 'Khadija'
+        khadija_user.role = 'EMPLOYEE'
+        khadija_user.is_staff = True
+        khadija_user.set_password('emp123')
+        khadija_user.save()
+        self.stdout.write(self.style.SUCCESS('Configured Employee: Khadija (employee@portalhq.com / khadija@portalhq.com, Pass: emp123)'))
+
+        # 1.4 Zulkijlee - Client (Primary: client@portalhq.com, Named: zulkijlee@client.com)
+        client_user, _ = User.objects.get_or_create(
             email='client@portalhq.com',
             defaults={
-                'full_name': 'Alex Johnson',
+                'full_name': 'Zulkijlee',
                 'role': 'CLIENT',
             }
         )
-        if created:
-            client_user.set_password('client123')
-            client_user.save()
-            self.stdout.write(self.style.SUCCESS('Created Client: client@portalhq.com (Pass: client123)'))
-        else:
-            self.stdout.write('Client client@portalhq.com ready.')
+        client_user.full_name = 'Zulkijlee'
+        client_user.role = 'CLIENT'
+        client_user.set_password('client123')
+        client_user.save()
 
-        # 1.4 Client User 2 (UITS Tech Systems)
-        uits_user, created = User.objects.get_or_create(
+        zulkijlee_user, _ = User.objects.get_or_create(
+            email='zulkijlee@client.com',
+            defaults={
+                'full_name': 'Zulkijlee',
+                'role': 'CLIENT',
+            }
+        )
+        zulkijlee_user.full_name = 'Zulkijlee'
+        zulkijlee_user.role = 'CLIENT'
+        zulkijlee_user.set_password('client123')
+        zulkijlee_user.save()
+        self.stdout.write(self.style.SUCCESS('Configured Client: Zulkijlee (client@portalhq.com / zulkijlee@client.com, Pass: client123)'))
+
+        # 1.5 Client 2 - Elena Rostova (UITS Tech Systems)
+        uits_user, _ = User.objects.get_or_create(
             email='uits@client.com',
             defaults={
                 'full_name': 'Elena Rostova',
                 'role': 'CLIENT',
             }
         )
-        if created:
-            uits_user.set_password('client123')
-            uits_user.save()
-            self.stdout.write(self.style.SUCCESS('Created Client: uits@client.com (Pass: client123)'))
-        else:
-            self.stdout.write('Client uits@client.com ready.')
+        uits_user.set_password('client123')
+        uits_user.save()
 
         # ─────────────────────────────────────────────────────────────
         # 2. CLIENT PROFILES
@@ -107,20 +163,20 @@ class Command(BaseCommand):
         apex_client, _ = Client.objects.get_or_create(
             email='client@portalhq.com',
             defaults={
-                'name': 'Alex Johnson',
+                'name': 'Zulkijlee',
                 'company_name': 'Apex Innovations Ltd.',
                 'phone': '+1 (555) 019-2834',
                 'address': '742 Evergreen Terrace, Suite 400, Springfield',
                 'status': 'ACTIVE',
                 'industry': 'Financial Technology',
                 'website': 'https://apexinnovations.example.com',
-                'notes': 'Key enterprise account. Focus on portal automation and security compliance.',
+                'notes': 'Key enterprise account with Zulkijlee. Focus on portal automation and security compliance.',
                 'user_account': client_user,
             }
         )
-        if not apex_client.user_account:
-            apex_client.user_account = client_user
-            apex_client.save()
+        apex_client.name = 'Zulkijlee'
+        apex_client.user_account = client_user
+        apex_client.save()
 
         uits_client, _ = Client.objects.get_or_create(
             email='uits@client.com',
@@ -141,7 +197,7 @@ class Command(BaseCommand):
             uits_client.save()
 
         # ─────────────────────────────────────────────────────────────
-        # 3. PROJECTS
+        # 3. PROJECTS & ASSIGNED STAFF (KHADIJA)
         # ─────────────────────────────────────────────────────────────
         today = date.today()
 
@@ -155,9 +211,10 @@ class Command(BaseCommand):
                 'start_date': today - timedelta(days=35),
                 'end_date': today + timedelta(days=45),
                 'budget': 48500.00,
+                'created_by': admin_user,
             }
         )
-        p1.assigned_employees.add(emp_user)
+        p1.assigned_employees.set([emp_user, khadija_user])
 
         # Project 2: Cloud Infrastructure Migration (Planned)
         p2, _ = Project.objects.get_or_create(
@@ -169,9 +226,10 @@ class Command(BaseCommand):
                 'start_date': today + timedelta(days=10),
                 'end_date': today + timedelta(days=120),
                 'budget': 62000.00,
+                'created_by': admin_user,
             }
         )
-        p2.assigned_employees.add(emp_user)
+        p2.assigned_employees.set([emp_user, khadija_user])
 
         # Project 3: Mobile Client Companion App (Under Review)
         p3, _ = Project.objects.get_or_create(
@@ -183,14 +241,14 @@ class Command(BaseCommand):
                 'start_date': today - timedelta(days=60),
                 'end_date': today + timedelta(days=15),
                 'budget': 35000.00,
+                'created_by': raghib_user,
             }
         )
-        p3.assigned_employees.add(emp_user)
+        p3.assigned_employees.set([emp_user, khadija_user])
 
         # ─────────────────────────────────────────────────────────────
         # 4. MILESTONES & TASKS
         # ─────────────────────────────────────────────────────────────
-        # Project 1 Milestones
         m1, _ = Milestone.objects.get_or_create(
             project=p1,
             title='Phase 1: Architecture & UI/UX Wireframes',
@@ -276,27 +334,6 @@ class Command(BaseCommand):
             defaults={'is_done': False, 'assigned_to': emp_user, 'due_date': today + timedelta(days=38)}
         )
 
-        # Project 3 Milestone
-        m_app, _ = Milestone.objects.get_or_create(
-            project=p3,
-            title='Beta Release & Client Acceptance',
-            defaults={
-                'description': 'Mobile build delivered for client review on TestFlight and Google Play Internal.',
-                'due_date': today + timedelta(days=8),
-                'is_completed': False,
-            }
-        )
-        Task.objects.get_or_create(
-            milestone=m_app,
-            title='Distribute iOS build via TestFlight to Elena Rostova',
-            defaults={'is_done': True, 'assigned_to': emp_user, 'due_date': today - timedelta(days=3)}
-        )
-        Task.objects.get_or_create(
-            milestone=m_app,
-            title='Collect client feedback and finalize release candidate',
-            defaults={'is_done': False, 'assigned_to': emp_user, 'due_date': today + timedelta(days=7)}
-        )
-
         # ─────────────────────────────────────────────────────────────
         # 5. DOCUMENTS & APPROVAL REQUESTS
         # ─────────────────────────────────────────────────────────────
@@ -314,7 +351,7 @@ class Command(BaseCommand):
         if not doc1.file:
             doc1.file.save(
                 'PortalHQ_Architecture_v1.2.txt',
-                ContentFile(b'PortalHQ Technical Architecture Specification v1.2\nAuthor: David Staff\nStatus: Pending Review\n'),
+                ContentFile(b'PortalHQ Technical Architecture Specification v1.2\nAuthor: Khadija\nClient: Zulkijlee (Apex Innovations)\nStatus: Pending Review\n'),
                 save=True
             )
 
@@ -332,11 +369,11 @@ class Command(BaseCommand):
         if not doc2.file:
             doc2.file.save(
                 'MSA_SLA_2026.txt',
-                ContentFile(b'Master Service Agreement & SLA 2026\nOrganization: PortalHQ\nClient: Apex Innovations Ltd.\n'),
+                ContentFile(b'Master Service Agreement & SLA 2026\nMaster Admin: Badhon\nClient: Zulkijlee (Apex Innovations Ltd.)\n'),
                 save=True
             )
 
-        # Approval Request for doc1 (Pending review by client)
+        # Approval Request for doc1 (Pending review by Zulkijlee)
         Approval.objects.get_or_create(
             document=doc1,
             defaults={
@@ -346,20 +383,20 @@ class Command(BaseCommand):
             }
         )
 
-        # Approval Request for doc2 (Approved)
+        # Approval Request for doc2 (Approved by Zulkijlee)
         Approval.objects.get_or_create(
             document=doc2,
             defaults={
                 'requested_by': admin_user,
                 'reviewed_by': client_user,
                 'status': 'APPROVED',
-                'comments': 'Approved by Alex Johnson. SLA terms accepted.',
+                'comments': 'Approved by Zulkijlee. SLA terms accepted.',
                 'reviewed_at': timezone.now() - timedelta(days=10),
             }
         )
 
         # ─────────────────────────────────────────────────────────────
-        # 6. SUPPORT TICKETS & COMMENTS
+        # 6. SUPPORT TICKETS & COMMENTS (ZULKIJLEE & KHADIJA)
         # ─────────────────────────────────────────────────────────────
         t1, _ = Ticket.objects.get_or_create(
             title='Need assistance with API webhook integration',
@@ -376,12 +413,12 @@ class Command(BaseCommand):
         TicketComment.objects.get_or_create(
             ticket=t1,
             author=client_user,
-            content='Here is our callback endpoint: https://staging.apexinnovations.example.com/api/webhooks/',
+            content='Here is our staging callback URL: https://staging.apexinnovations.example.com/api/webhooks/',
         )
         TicketComment.objects.get_or_create(
             ticket=t1,
             author=emp_user,
-            content='Thank you Alex! Please verify that your bearer secret matches the token displayed under Organization Settings -> Integrations.',
+            content='Hi Zulkijlee! Khadija here from the delivery team. Please verify that your bearer secret matches the secret key in your organization settings.',
         )
 
         Ticket.objects.get_or_create(
@@ -395,33 +432,19 @@ class Command(BaseCommand):
             }
         )
 
-        Ticket.objects.get_or_create(
-            title='Billing clarification for Q3 deliverables',
-            client=uits_client,
-            project=p3,
-            defaults={
-                'description': 'Requesting itemized breakdown of milestones delivered during the month of September.',
-                'status': 'RESOLVED',
-                'priority': 'LOW',
-                'created_by': uits_user,
-                'assigned_to': emp_user,
-            }
-        )
-
         # ─────────────────────────────────────────────────────────────
         # 7. COMMUNICATIONS: MEETINGS, ANNOUNCEMENTS, NOTIFICATIONS
         # ─────────────────────────────────────────────────────────────
-        # Meetings
         meet1, _ = Meeting.objects.get_or_create(
             title='Weekly Sprint Review & Roadmap Alignment',
             project=p1,
             defaults={
                 'meeting_date': timezone.now() + timedelta(days=1, hours=3),
                 'agenda': '1. Review Phase 3 milestone progress\n2. Inspect approval turnaround times\n3. Plan Phase 4 deployment schedule',
-                'minutes': 'Action items: David Staff to finish support ticket comment threads; Alex Johnson to review pending design approval.',
+                'minutes': 'Action items: Khadija to complete ticket comments; Zulkijlee to review pending architecture approval.',
             }
         )
-        meet1.participants.set([admin_user, emp_user, client_user])
+        meet1.participants.set([admin_user, raghib_user, emp_user, client_user])
 
         meet2, _ = Meeting.objects.get_or_create(
             title='Project Kickoff: Cloud Migration',
@@ -429,21 +452,10 @@ class Command(BaseCommand):
             defaults={
                 'meeting_date': timezone.now() + timedelta(days=4, hours=2),
                 'agenda': 'Review target VPC topology, IAM permission hierarchy, and failover requirements.',
-                'minutes': 'Initial architectural planning session.',
+                'minutes': 'Initial architectural planning session with Badhon and Raghib.',
             }
         )
-        meet2.participants.set([admin_user, emp_user, client_user])
-
-        meet3, _ = Meeting.objects.get_or_create(
-            title='Mobile Companion App - Store Review Walkthrough',
-            project=p3,
-            defaults={
-                'meeting_date': timezone.now() + timedelta(days=2, hours=5),
-                'agenda': 'Review app screenshots, privacy policy disclosures, and test account provisioning for Apple reviewers.',
-                'minutes': 'Pre-submission review session.',
-            }
-        )
-        meet3.participants.set([admin_user, emp_user, uits_user])
+        meet2.participants.set([admin_user, raghib_user, emp_user, client_user])
 
         # Announcements
         Announcement.objects.get_or_create(
@@ -456,10 +468,10 @@ class Command(BaseCommand):
         )
 
         Announcement.objects.get_or_create(
-            title='New Client Onboarding Guidelines',
-            created_by=admin_user,
+            title='Delivery Guidelines & SOP',
+            created_by=raghib_user,
             defaults={
-                'content': 'All staff members: please review the updated SOP for provisioning client credentials and attaching company projects in the Admin portal.',
+                'content': 'Staff team: please review the updated SOP for milestone deliverables and task assignment tracking in the portal.',
                 'target_audience': 'EMPLOYEES',
             }
         )
@@ -468,17 +480,17 @@ class Command(BaseCommand):
             title='Welcome to the PortalHQ Client Workspace',
             created_by=admin_user,
             defaults={
-                'content': 'Welcome to your dedicated client portal. Here you can track active milestones, review deliverables, request approvals, and communicate with your project team in real time.',
+                'content': 'Welcome Zulkijlee and the Apex Innovations team. Here you can track active milestones, review deliverables, request approvals, and communicate with your project team in real time.',
                 'target_audience': 'CLIENTS',
             }
         )
 
-        # In-app Notifications
+        # Notifications
         Notification.objects.get_or_create(
             recipient=client_user,
             title='Approval Required',
             defaults={
-                'message': "The document 'PortalHQ Technical Architecture Specification v1.2' is waiting for your review.",
+                'message': "The document 'PortalHQ Technical Architecture Specification v1.2' uploaded by Khadija is waiting for your review.",
                 'is_read': False,
             }
         )
@@ -487,18 +499,18 @@ class Command(BaseCommand):
             recipient=emp_user,
             title='New Ticket Assignment',
             defaults={
-                'message': "You were assigned to Ticket #1: 'Need assistance with API webhook integration'.",
+                'message': "Khadija, you were assigned to Ticket #1 from Zulkijlee: 'Need assistance with API webhook integration'.",
                 'is_read': False,
             }
         )
 
         Notification.objects.get_or_create(
             recipient=admin_user,
-            title='New Client Partner Onboarded',
+            title='Master Admin Dashboard Online',
             defaults={
-                'message': "Client partner 'UITS Tech Systems' (Elena Rostova) was successfully onboarded.",
+                'message': "Welcome Badhon. All systems, audit logs, and team members (Raghib, Khadija, Zulkijlee) are active and synced.",
                 'is_read': True,
             }
         )
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded full testing data across all portals!'))
+        self.stdout.write(self.style.SUCCESS('Successfully seeded team members: Badhon (Master Admin), Raghib (Admin), Khadija (Employee), Zulkijlee (Client)!'))
