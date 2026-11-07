@@ -38,6 +38,20 @@ export default function ProjectList() {
   const columns = [
     { key: 'title', label: 'Project Title' },
     { key: 'client_name', label: 'Client' },
+    {
+      key: 'assigned_employees_count',
+      label: 'Team',
+      render: (v) =>
+        v > 0 ? (
+          <span className="inline-flex items-center gap-1 font-semibold text-slate-700 bg-teal-50 text-teal-800 px-2.5 py-0.5 rounded-full text-[11px]">
+            {v} assigned
+          </span>
+        ) : (
+          <span className="text-amber-700 font-medium text-[11px] bg-amber-50 px-2 py-0.5 rounded-full">
+            Unassigned
+          </span>
+        ),
+    },
     { key: 'status', label: 'Status', render: (v) => <Badge status={v} /> },
     { key: 'start_date', label: 'Start Date', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
     { key: 'end_date', label: 'End Date', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },

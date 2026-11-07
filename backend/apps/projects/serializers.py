@@ -49,7 +49,12 @@ class ProjectListSerializer(serializers.ModelSerializer):
     """
 
     client_name = serializers.CharField(source='client.company_name', read_only=True)
+    assigned_employees_count = serializers.IntegerField(source='assigned_employees.count', read_only=True)
 
     class Meta:
         model = Project
-        fields = ['id', 'title', 'description', 'client', 'client_name', 'status', 'start_date', 'end_date', 'budget', 'created_at']
+        fields = [
+            'id', 'title', 'description', 'client', 'client_name',
+            'assigned_employees_count',
+            'status', 'start_date', 'end_date', 'budget', 'created_at'
+        ]
