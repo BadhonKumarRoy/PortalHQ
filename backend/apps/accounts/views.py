@@ -177,6 +177,26 @@ class UserListView(generics.ListCreateAPIView):
         if role == 'ADMIN':
             user.is_staff = True
             user.save()
+        elif role == 'CLIENT':
+            # Auto-provision client company record so it appears immediately in client directory
+            from apps.clients.models import Client
+            company_name = request.data.get('company_name', '').strip() or f"{user.full_name}'s Organization"
+            client = Client.objects.filter(email__iexact=user.email).first()
+            if not client:
+                Client.objects.create(
+                    name=user.full_name,
+                    company_name=company_name,
+                    email=user.email,
+                    phone=user.phone or '',
+                    status='ACTIVE',
+                    user_account=user
+                )
+            else:
+                client.name = user.full_name
+                if company_name:
+                    client.company_name = company_name
+                client.user_account = user
+                client.save()
 
         return Response({
             'user': UserSerializer(user).data,
@@ -223,6 +243,9 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
         if user.role == 'ADMIN':
             user.is_staff = True
             user.save()
+        elif user.is_staff and not user.is_superuser:
+            user.is_staff = False
+            user.save(update_fields=['is_staff'])
 
 
 class AdminResetPasswordView(APIView):

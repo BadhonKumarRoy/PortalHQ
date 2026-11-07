@@ -13,25 +13,67 @@ from apps.accounts.models import User
 class UserSerializer(serializers.ModelSerializer):
     """
     Full serializer for the User model.
-    Used when returning user details in API responses.
+    Used when returning user details in API responses and updating user accounts.
     Password is excluded from output for security.
     """
     is_master_admin = serializers.BooleanField(read_only=True)
-    company_name = serializers.SerializerMethodField()
+    company_name = serializers.CharField(required=False, allow_blank=True, allow_null=True, write_only=True)
+    client_id = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'email', 'full_name', 'role',
-            'phone', 'is_active', 'is_staff', 'is_superuser', 'is_master_admin', 'company_name', 'date_joined'
+            'phone', 'is_active', 'is_staff', 'is_superuser', 'is_master_admin',
+            'company_name', 'client_id', 'date_joined'
         ]
-        # These fields are returned but cannot be changed via this serializer
-        read_only_fields = ['id', 'date_joined', 'is_staff', 'is_superuser', 'is_master_admin', 'company_name']
+        # These fields are returned but cannot be changed directly via basic user fields
+        read_only_fields = ['id', 'date_joined', 'is_staff', 'is_superuser', 'is_master_admin', 'client_id']
 
-    def get_company_name(self, obj):
-        """Return company name if this user is linked to a client company."""
+    def get_client_id(self, obj):
         profile = obj.get_client_profile() if hasattr(obj, 'get_client_profile') else getattr(obj, 'client_profile', None)
-        return profile.company_name if profile else None
+        return profile.id if profile else None
+
+    def to_representation(self, instance):
+        """Include the linked client's company name and client_id in the serialized output."""
+        data = super().to_representation(instance)
+        profile = instance.get_client_profile() if hasattr(instance, 'get_client_profile') else getattr(instance, 'client_profile', None)
+        data['company_name'] = profile.company_name if profile else ''
+        data['client_id'] = profile.id if profile else None
+        return data
+
+    def update(self, instance, validated_data):
+        company_name = validated_data.pop('company_name', None)
+        user = super().update(instance, validated_data)
+
+        # Synchronize Client profile if this user has role CLIENT or has a linked client profile
+        if user.role == 'CLIENT' or hasattr(user, 'client_profile') or (hasattr(user, 'get_client_profile') and user.get_client_profile()):
+            from apps.clients.models import Client
+            client = user.get_client_profile() if hasattr(user, 'get_client_profile') else getattr(user, 'client_profile', None)
+            if client:
+                client.name = user.full_name
+                # Avoid email clash on Client
+                if not Client.objects.filter(email__iexact=user.email).exclude(pk=client.pk).exists():
+                    client.email = user.email
+                if user.phone is not None:
+                    client.phone = user.phone
+                if company_name is not None and str(company_name).strip():
+                    client.company_name = str(company_name).strip()
+                client.status = 'ACTIVE' if user.is_active else 'INACTIVE'
+                if client.user_account != user:
+                    client.user_account = user
+                client.save()
+            elif user.role == 'CLIENT':
+                comp = str(company_name).strip() if (company_name and str(company_name).strip()) else f"{user.full_name}'s Organization"
+                Client.objects.create(
+                    name=user.full_name,
+                    company_name=comp,
+                    email=user.email,
+                    phone=user.phone or '',
+                    status='ACTIVE' if user.is_active else 'INACTIVE',
+                    user_account=user
+                )
+        return user
 
 
 class RegisterSerializer(serializers.ModelSerializer):

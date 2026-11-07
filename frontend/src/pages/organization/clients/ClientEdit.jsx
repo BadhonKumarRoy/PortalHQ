@@ -106,7 +106,7 @@ export default function ClientEdit() {
       };
 
       await updateClient(id, payload);
-      toast.success('Client updated successfully!');
+      toast.success('Client profile & login credentials updated successfully!');
       navigate(`/organization/clients/${id}`);
     } catch (err) {
       const serverErrors = err.response?.data || {};

@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, Users, UserCheck, UserPlus, Info } from 'lucide-react';
+import { Plus, Eye, Users, UserCheck, UserPlus } from 'lucide-react';
 import { getProjects, updateProject } from '../../../api/projects';
 import { getUsers } from '../../../api/auth';
 import PageHeader from '../../../components/ui/PageHeader';
@@ -158,17 +158,6 @@ export default function ProjectList() {
           </Button>
         }
       />
-
-      {/* Quick explanation banner for admins */}
-      <div className="flex items-start gap-3 p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl text-xs text-blue-900">
-        <Info size={16} className="text-blue-600 shrink-0 mt-0.5" />
-        <div>
-          <p className="font-semibold mb-0.5">How Staff Assignment Works:</p>
-          <p className="text-blue-800 leading-relaxed">
-            Click on the <strong>Assigned Team</strong> pill on any project below (or click <strong>Manage Team</strong> on the project details page) to choose which employees work on it. Once assigned, staff members will immediately see the project in their <strong>My Projects</strong> and <strong>My Tasks</strong> portals.
-          </p>
-        </div>
-      </div>
 
       <Card>
         {/* Status filter tabs */}

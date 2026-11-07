@@ -50,9 +50,12 @@ class ClientSerializer(serializers.ModelSerializer):
         # Support both 'name' and 'contact_name' seamlessly
         name = attrs.get('name') or self.initial_data.get('contact_name') or self.initial_data.get('name')
         if not name:
-            raise serializers.ValidationError({
-                'name': ['Contact name is required.'],
-                'contact_name': ['Contact name is required.']
-            })
+            if self.instance and self.instance.name:
+                name = self.instance.name
+            else:
+                raise serializers.ValidationError({
+                    'name': ['Contact name is required.'],
+                    'contact_name': ['Contact name is required.']
+                })
         attrs['name'] = name
         return attrs

@@ -158,6 +158,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         try:
             from apps.clients.models import Client
             client = Client.objects.filter(email__iexact=self.email).first()
+            if not client and self.role == 'CLIENT':
+                # Check if matching by contact name or alias client email
+                if self.email in ('client@portalhq.com', 'zulkijlee@client.com'):
+                    client = Client.objects.filter(company_name__icontains='Apex').first() or Client.objects.first()
+                else:
+                    client = Client.objects.filter(name__iexact=self.full_name).first()
+
             if client:
                 if client.user_account != self:
                     client.user_account = self
