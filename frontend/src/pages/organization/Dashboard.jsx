@@ -42,16 +42,19 @@ export default function OrgDashboard() {
           getApprovals({ status: 'PENDING' }),
         ]);
 
+        const clients = Array.isArray(clientsRes.data) ? clientsRes.data : clientsRes.data?.results || [];
+        const projects = Array.isArray(projectsRes.data) ? projectsRes.data : projectsRes.data?.results || [];
+        const tickets = Array.isArray(ticketsRes.data) ? ticketsRes.data : ticketsRes.data?.results || [];
+        const approvals = Array.isArray(approvalsRes.data) ? approvalsRes.data : approvalsRes.data?.results || [];
+
         setStats({
-          clients: clientsRes.data?.count ?? clientsRes.data?.length ?? 0,
-          projects: projectsRes.data?.count ?? projectsRes.data?.length ?? 0,
-          tickets: ticketsRes.data?.filter(t => t.status === 'OPEN' || t.status === 'IN_PROGRESS')?.length ?? 0,
-          approvals: approvalsRes.data?.count ?? approvalsRes.data?.length ?? 0,
+          clients: clientsRes.data?.count ?? clients.length,
+          projects: projectsRes.data?.count ?? projects.length,
+          tickets: tickets.filter(t => t.status === 'OPEN' || t.status === 'IN_PROGRESS').length,
+          approvals: approvalsRes.data?.count ?? approvals.length,
         });
 
         // Show only the 5 most recent projects and tickets
-        const projects = Array.isArray(projectsRes.data) ? projectsRes.data : projectsRes.data?.results || [];
-        const tickets = Array.isArray(ticketsRes.data) ? ticketsRes.data : ticketsRes.data?.results || [];
         setRecentProjects(projects.slice(0, 5));
         setRecentTickets(tickets.slice(0, 5));
       } catch (err) {

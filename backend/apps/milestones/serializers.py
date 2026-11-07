@@ -19,11 +19,26 @@ class TaskSerializer(serializers.ModelSerializer):
         source='assigned_to.full_name',
         read_only=True
     )
+    milestone_title = serializers.CharField(
+        source='milestone.title',
+        read_only=True
+    )
+    project_title = serializers.CharField(
+        source='milestone.project.title',
+        read_only=True
+    )
+    project_id = serializers.IntegerField(
+        source='milestone.project.id',
+        read_only=True
+    )
 
     class Meta:
         model = Task
-        fields = ['id', 'milestone', 'title', 'is_done', 'assigned_to', 'assigned_to_name', 'due_date']
-        read_only_fields = ['id']
+        fields = [
+            'id', 'milestone', 'milestone_title', 'project_id', 'project_title',
+            'title', 'is_done', 'assigned_to', 'assigned_to_name', 'due_date'
+        ]
+        read_only_fields = ['id', 'milestone_title', 'project_id', 'project_title']
 
 
 class MilestoneSerializer(serializers.ModelSerializer):

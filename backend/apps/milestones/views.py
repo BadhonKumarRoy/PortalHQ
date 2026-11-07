@@ -82,10 +82,11 @@ class TaskViewSet(viewsets.ModelViewSet):
             qs = Task.objects.all().select_related('milestone', 'assigned_to')
 
         elif user.role == 'EMPLOYEE':
-            # Tasks in projects the employee is assigned to
+            # Tasks in projects the employee is assigned to OR assigned directly to this user
+            from django.db.models import Q
             qs = Task.objects.filter(
-                milestone__project__assigned_employees=user
-            ).select_related('milestone', 'assigned_to')
+                Q(milestone__project__assigned_employees=user) | Q(assigned_to=user)
+            ).select_related('milestone', 'assigned_to', 'milestone__project')
 
         elif user.role == 'CLIENT':
             client = user.get_client_profile() if hasattr(user, 'get_client_profile') else getattr(user, 'client_profile', None)

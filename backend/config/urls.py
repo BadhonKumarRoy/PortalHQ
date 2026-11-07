@@ -20,6 +20,7 @@ urlpatterns = [
     path('api/clients/', include('apps.clients.urls')),
     path('api/projects/', include('apps.projects.urls')),
     path('api/milestones/', include('apps.milestones.urls')),
+    path('api/tasks/', include('apps.milestones.task_urls')),
 
     # ── Documents & Approvals ────────────────────────────────────────────
     path('api/documents/', include('apps.documents.urls')),
