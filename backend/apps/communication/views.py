@@ -67,16 +67,28 @@ class MeetingViewSet(viewsets.ModelViewSet):
     serializer_class = MeetingSerializer
 
     def get_queryset(self):
-        """Filter meetings by participation."""
+        """Filter meetings by participation and project association."""
         user = self.request.user
 
         if user.role == 'ADMIN':
-            return Meeting.objects.all().prefetch_related('participants')
+            return Meeting.objects.all().prefetch_related('participants', 'project')
 
-        # Employees and Clients see meetings they're a participant in
-        return Meeting.objects.filter(
-            participants=user
-        ).prefetch_related('participants')
+        elif user.role == 'EMPLOYEE':
+            from django.db.models import Q
+            return Meeting.objects.filter(
+                Q(participants=user) | Q(project__assigned_employees=user)
+            ).distinct().prefetch_related('participants', 'project')
+
+        elif user.role == 'CLIENT':
+            from django.db.models import Q
+            client = user.get_client_profile() if hasattr(user, 'get_client_profile') else getattr(user, 'client_profile', None)
+            if client:
+                return Meeting.objects.filter(
+                    Q(participants=user) | Q(project__client=client)
+                ).distinct().prefetch_related('participants', 'project')
+            return Meeting.objects.filter(participants=user).distinct().prefetch_related('participants', 'project')
+
+        return Meeting.objects.none()
 
     def get_permissions(self):
         """Only Admin/Employee can create or manage meetings."""
