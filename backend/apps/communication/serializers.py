@@ -21,12 +21,13 @@ class MeetingSerializer(serializers.ModelSerializer):
     """Serializer for Meetings. Shows participant list and project title."""
 
     project_title = serializers.CharField(source='project.title', read_only=True)
+    client_name = serializers.CharField(source='project.client.company_name', read_only=True)
 
     class Meta:
         model = Meeting
         fields = [
             'id', 'title', 'agenda', 'participants',
-            'project', 'project_title',
+            'project', 'project_title', 'client_name',
             'meeting_date', 'minutes', 'created_at'
         ]
         read_only_fields = ['id', 'created_at']
@@ -35,7 +36,9 @@ class MeetingSerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     """Serializer for Notifications. Used for reading and marking as read."""
 
+    recipient_name = serializers.CharField(source='recipient.full_name', read_only=True)
+
     class Meta:
         model = Notification
-        fields = ['id', 'recipient', 'title', 'message', 'is_read', 'created_at']
-        read_only_fields = ['id', 'recipient', 'created_at']
+        fields = ['id', 'recipient', 'recipient_name', 'title', 'message', 'is_read', 'created_at']
+        read_only_fields = ['id', 'created_at']

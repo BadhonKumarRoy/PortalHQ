@@ -85,21 +85,31 @@ class MeetingViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
 
-class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+class NotificationViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Notifications.
-    Read-only: users can only see their own notifications.
-    Custom action allows marking notifications as read.
+    Users see their own notifications; Admins can see and manage all.
+    Admins can broadcast or create notifications for users.
+    Custom actions allow marking notifications as read.
     """
 
     permission_classes = [IsAuthenticated]
     serializer_class = NotificationSerializer
 
     def get_queryset(self):
-        """Each user only sees their own notifications."""
-        return Notification.objects.filter(recipient=self.request.user)
+        """Users see their own notifications. Admins see all notifications."""
+        user = self.request.user
+        if user.role == 'ADMIN':
+            return Notification.objects.all().select_related('recipient').order_by('-created_at')
+        return Notification.objects.filter(recipient=user).order_by('-created_at')
 
-    @action(detail=True, methods=['post'], url_path='mark-read')
+    def get_permissions(self):
+        """Only admins can create or delete notifications."""
+        if self.action in ('create', 'destroy'):
+            return [IsAuthenticated(), IsAdmin()]
+        return [IsAuthenticated()]
+
+    @action(detail=True, methods=['post', 'patch'], url_path='mark-read')
     def mark_read(self, request, pk=None):
         """
         POST /api/communication/notifications/<id>/mark-read/
@@ -110,7 +120,7 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         notification.save()
         return Response({'message': 'Notification marked as read.'})
 
-    @action(detail=False, methods=['post'], url_path='mark-all-read')
+    @action(detail=False, methods=['post', 'patch'], url_path='mark-all-read')
     def mark_all_read(self, request):
         """
         POST /api/communication/notifications/mark-all-read/
