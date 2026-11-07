@@ -1,10 +1,11 @@
 // src/pages/organization/clients/ClientDetails.jsx
 // A 360° view of a single client with tabs: Overview, Projects, Tickets, Documents.
+// Includes a 1-click 'Share Portal Login' credential generator to copy and send to the client.
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Pencil, Mail, Phone, Globe, MapPin, Building2, User } from 'lucide-react';
-import { getClient } from '../../../api/clients';
+import { Pencil, Mail, Phone, Globe, MapPin, Building2, User, KeyRound, Copy, Check } from 'lucide-react';
+import { getClient, getClientPortalAccess } from '../../../api/clients';
 import { getProjects } from '../../../api/projects';
 import { getTickets } from '../../../api/tickets';
 import { getDocuments } from '../../../api/documents';
@@ -13,6 +14,7 @@ import Button from '../../../components/ui/Button';
 import Card from '../../../components/ui/Card';
 import Badge from '../../../components/ui/Badge';
 import Table from '../../../components/ui/Table';
+import Modal from '../../../components/ui/Modal';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
 
@@ -21,12 +23,22 @@ const TABS = ['Overview', 'Projects', 'Tickets', 'Documents'];
 export default function ClientDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [client, setClient] = useState(null);
   const [projects, setProjects] = useState([]);
   const [tickets, setTickets] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
+
+  // Credentials Modal State
+  const [credModal, setCredModal] = useState({
+    open: false,
+    email: '',
+    password: '',
+    copied: false,
+    loading: false,
+  });
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -49,6 +61,33 @@ export default function ClientDetails() {
     };
     fetchAll();
   }, [id]);
+
+  /** Retrieve or reset client's portal login info */
+  const handlePortalAccess = async () => {
+    try {
+      const res = await getClientPortalAccess(id);
+      setCredModal({
+        open: true,
+        email: res.data.email,
+        password: res.data.temp_password,
+        copied: false,
+        loading: false,
+      });
+    } catch {
+      toast.error('Failed to generate client portal credentials.');
+    }
+  };
+
+  /** Copy credentials to clipboard */
+  const copyCredentials = () => {
+    const textToCopy = `🔑 PortalHQ Client Portal Access:\n• Portal URL: ${window.location.origin}/\n• Company: ${client?.company_name}\n• Email: ${credModal.email}\n• Temporary Password: ${credModal.password}`;
+    navigator.clipboard.writeText(textToCopy);
+    setCredModal((prev) => ({ ...prev, copied: true }));
+    toast.success('Credentials copied to clipboard!');
+    setTimeout(() => {
+      setCredModal((prev) => ({ ...prev, copied: false }));
+    }, 3000);
+  };
 
   if (loading) return <LoadingSpinner />;
   if (!client) return <div className="text-slate-500">Client not found.</div>;
@@ -78,11 +117,16 @@ export default function ClientDetails() {
     <div className="space-y-6">
       <PageHeader
         title={client.company_name}
-        subtitle={client.industry || 'Client'}
+        subtitle={client.industry || 'Client Profile'}
         action={
-          <Button icon={Pencil} variant="secondary" onClick={() => navigate(`/organization/clients/${id}/edit`)}>
-            Edit Client
-          </Button>
+          <div className="flex gap-2">
+            <Button icon={KeyRound} variant="secondary" onClick={handlePortalAccess}>
+              Share Portal Login
+            </Button>
+            <Button icon={Pencil} variant="secondary" onClick={() => navigate(`/organization/clients/${id}/edit`)}>
+              Edit Client
+            </Button>
+          </div>
         }
       />
 
@@ -114,8 +158,15 @@ export default function ClientDetails() {
               <InfoRow icon={Phone} label="Phone" value={client.phone} />
               <InfoRow icon={Globe} label="Website" value={client.website} />
               <InfoRow icon={MapPin} label="Address" value={client.address} />
+
+              <div className="pt-3 border-t border-slate-100 flex justify-end">
+                <Button size="sm" icon={KeyRound} variant="secondary" onClick={handlePortalAccess}>
+                  Copy Login Details
+                </Button>
+              </div>
             </div>
           </Card>
+
           <Card title="Status & Notes">
             <div className="space-y-4">
               <div>
@@ -125,7 +176,7 @@ export default function ClientDetails() {
               {client.notes && (
                 <div>
                   <p className="text-xs text-slate-500 mb-1">Notes</p>
-                  <p className="text-sm text-slate-700">{client.notes}</p>
+                  <p className="text-sm text-slate-700 whitespace-pre-line">{client.notes}</p>
                 </div>
               )}
             </div>
@@ -153,6 +204,53 @@ export default function ClientDetails() {
           <Table columns={docColumns} data={documents} emptyMessage="No documents shared with this client." />
         </Card>
       )}
+
+      {/* ── MODAL: 1-CLICK CLIENT CREDENTIAL CARD ──────────────────────────── */}
+      <Modal
+        open={credModal.open}
+        onClose={() => setCredModal((prev) => ({ ...prev, open: false }))}
+        title="Client Portal Access Details"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Copy and send these login credentials to <strong>{client.contact_name || client.name}</strong> via WhatsApp, SMS, or email:
+          </p>
+
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl font-mono text-xs space-y-2 text-slate-800">
+            <div className="flex justify-between items-center py-1 border-b border-slate-200">
+              <span className="text-slate-400 font-sans">Login Portal:</span>
+              <span className="font-semibold text-teal-700">{window.location.origin}/</span>
+            </div>
+            <div className="flex justify-between items-center py-1 border-b border-slate-200">
+              <span className="text-slate-400 font-sans">Company:</span>
+              <span className="font-semibold">{client.company_name}</span>
+            </div>
+            <div className="flex justify-between items-center py-1 border-b border-slate-200">
+              <span className="text-slate-400 font-sans">Email:</span>
+              <span className="font-semibold">{credModal.email}</span>
+            </div>
+            <div className="flex justify-between items-center py-1">
+              <span className="text-slate-400 font-sans">Temporary Password:</span>
+              <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                {credModal.password}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant={credModal.copied ? 'primary' : 'secondary'}
+              icon={credModal.copied ? Check : Copy}
+              onClick={copyCredentials}
+            >
+              {credModal.copied ? 'Copied to Clipboard!' : 'Copy Login Credentials'}
+            </Button>
+            <Button onClick={() => setCredModal((prev) => ({ ...prev, open: false }))}>
+              Done
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

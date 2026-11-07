@@ -17,3 +17,7 @@ export const updateClient = (id, data) => api.patch(`/clients/${id}/`, data);
 
 /** Delete a client record. */
 export const deleteClient = (id) => api.delete(`/clients/${id}/`);
+
+/** Generate or retrieve a client's portal login credentials to copy & share. */
+export const getClientPortalAccess = (id, password = null) =>
+  api.post(`/clients/${id}/portal-access/`, password ? { password } : {});
