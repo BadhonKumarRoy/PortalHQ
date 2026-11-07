@@ -55,6 +55,6 @@ class ProjectListSerializer(serializers.ModelSerializer):
         model = Project
         fields = [
             'id', 'title', 'description', 'client', 'client_name',
-            'assigned_employees_count',
+            'assigned_employees', 'assigned_employees_count',
             'status', 'start_date', 'end_date', 'budget', 'created_at'
         ]
