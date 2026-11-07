@@ -40,9 +40,10 @@ class MilestoneViewSet(viewsets.ModelViewSet):
 
         elif user.role == 'CLIENT':
             # Clients see milestones for their client's projects
-            if hasattr(user, 'client_profile') and user.client_profile:
+            client = user.get_client_profile() if hasattr(user, 'get_client_profile') else getattr(user, 'client_profile', None)
+            if client:
                 qs = Milestone.objects.filter(
-                    project__client=user.client_profile
+                    project__client=client
                 ).select_related('project')
 
         project_id = self.request.query_params.get('project')
@@ -87,9 +88,10 @@ class TaskViewSet(viewsets.ModelViewSet):
             ).select_related('milestone', 'assigned_to')
 
         elif user.role == 'CLIENT':
-            if hasattr(user, 'client_profile') and user.client_profile:
+            client = user.get_client_profile() if hasattr(user, 'get_client_profile') else getattr(user, 'client_profile', None)
+            if client:
                 qs = Task.objects.filter(
-                    milestone__project__client=user.client_profile
+                    milestone__project__client=client
                 ).select_related('milestone', 'assigned_to')
 
         milestone_id = self.request.query_params.get('milestone')

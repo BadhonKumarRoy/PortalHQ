@@ -17,15 +17,21 @@ class UserSerializer(serializers.ModelSerializer):
     Password is excluded from output for security.
     """
     is_master_admin = serializers.BooleanField(read_only=True)
+    company_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'email', 'full_name', 'role',
-            'phone', 'is_active', 'is_staff', 'is_superuser', 'is_master_admin', 'date_joined'
+            'phone', 'is_active', 'is_staff', 'is_superuser', 'is_master_admin', 'company_name', 'date_joined'
         ]
         # These fields are returned but cannot be changed via this serializer
-        read_only_fields = ['id', 'date_joined', 'is_staff', 'is_superuser', 'is_master_admin']
+        read_only_fields = ['id', 'date_joined', 'is_staff', 'is_superuser', 'is_master_admin', 'company_name']
+
+    def get_company_name(self, obj):
+        """Return company name if this user is linked to a client company."""
+        profile = obj.get_client_profile() if hasattr(obj, 'get_client_profile') else getattr(obj, 'client_profile', None)
+        return profile.company_name if profile else None
 
 
 class RegisterSerializer(serializers.ModelSerializer):

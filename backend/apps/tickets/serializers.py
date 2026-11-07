@@ -29,12 +29,13 @@ class TicketSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(source='created_by.full_name', read_only=True)
     assigned_to_name = serializers.CharField(source='assigned_to.full_name', read_only=True)
     client_name = serializers.CharField(source='client.company_name', read_only=True)
+    project_title = serializers.CharField(source='project.title', read_only=True)
 
     class Meta:
         model = Ticket
         fields = [
             'id', 'title', 'description', 'status', 'priority',
-            'project', 'client', 'client_name',
+            'project', 'project_title', 'client', 'client_name',
             'created_by', 'created_by_name',
             'assigned_to', 'assigned_to_name',
             'comments',  # Nested comment thread
@@ -49,8 +50,9 @@ class TicketListSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(source='created_by.full_name', read_only=True)
     assigned_to_name = serializers.CharField(source='assigned_to.full_name', read_only=True)
     client_name = serializers.CharField(source='client.company_name', read_only=True)
+    project_title = serializers.CharField(source='project.title', read_only=True)
 
     class Meta:
         model = Ticket
-        fields = ['id', 'title', 'status', 'priority', 'client_name',
+        fields = ['id', 'title', 'status', 'priority', 'project', 'project_title', 'client_name',
                   'created_by_name', 'assigned_to_name', 'created_at']

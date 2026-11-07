@@ -138,6 +138,36 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Convenience property: True if this user is a Client."""
         return self.role == 'CLIENT'
 
+    def get_client_profile(self):
+        """
+        Safely retrieve the Client model instance linked to this user.
+        
+        1. Checks the reverse OneToOne relationship (`user.client_profile`).
+        2. If unlinked (or raises RelatedObjectDoesNotExist), falls back to matching
+           Client by email and auto-links `client.user_account = self`.
+        
+        This guarantees that client accounts are never locked out of their data.
+        """
+        try:
+            profile = getattr(self, 'client_profile', None)
+            if profile is not None:
+                return profile
+        except Exception:
+            pass
+
+        try:
+            from apps.clients.models import Client
+            client = Client.objects.filter(email__iexact=self.email).first()
+            if client:
+                if client.user_account != self:
+                    client.user_account = self
+                    client.save(update_fields=['user_account'])
+                return client
+        except Exception:
+            pass
+
+        return None
+
     def delete(self, *args, **kwargs):
         """
         Database-level safety lock:

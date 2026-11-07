@@ -44,9 +44,10 @@ class ApprovalViewSet(viewsets.ModelViewSet):
 
         elif user.role == 'CLIENT':
             # Clients see approvals for their documents
-            if hasattr(user, 'client_profile') and user.client_profile:
+            client = user.get_client_profile() if hasattr(user, 'get_client_profile') else getattr(user, 'client_profile', None)
+            if client:
                 return Approval.objects.filter(
-                    document__client=user.client_profile
+                    document__client=client
                 ).select_related('document', 'requested_by', 'reviewed_by')
 
         return Approval.objects.none()
@@ -63,7 +64,7 @@ class ApprovalViewSet(viewsets.ModelViewSet):
         """Automatically set the requester to the current user."""
         serializer.save(requested_by=self.request.user)
 
-    @action(detail=True, methods=['post'], url_path='review')
+    @action(detail=True, methods=['post', 'patch'], url_path='review')
     def review(self, request, pk=None):
         """
         POST /api/approvals/<id>/review/

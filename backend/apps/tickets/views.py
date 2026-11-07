@@ -2,7 +2,9 @@
 # API views for the tickets app.
 # Clients can create and view their tickets; Employees manage and respond to them.
 
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from apps.tickets.models import Ticket, TicketComment
@@ -41,9 +43,10 @@ class TicketViewSet(viewsets.ModelViewSet):
 
         elif user.role == 'CLIENT':
             # Clients only see their own tickets
-            if hasattr(user, 'client_profile') and user.client_profile:
+            client = user.get_client_profile() if hasattr(user, 'get_client_profile') else getattr(user, 'client_profile', None)
+            if client:
                 return Ticket.objects.filter(
-                    client=user.client_profile
+                    client=client
                 ).select_related('project', 'client', 'created_by', 'assigned_to')
 
         return Ticket.objects.none()
@@ -62,7 +65,36 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Automatically set the creator to the current user."""
-        serializer.save(created_by=self.request.user)
+        user = self.request.user
+        extra = {'created_by': user}
+        if user.role == 'CLIENT':
+            client = user.get_client_profile() if hasattr(user, 'get_client_profile') else getattr(user, 'client_profile', None)
+            if client:
+                extra['client'] = client
+        serializer.save(**extra)
+
+    @action(detail=True, methods=['get', 'post'], url_path='comments')
+    def comments(self, request, pk=None):
+        """
+        GET  /api/tickets/<id>/comments/ → list comments for this ticket
+        POST /api/tickets/<id>/comments/ → post a new comment
+        """
+        ticket = self.get_object()
+        if request.method == 'POST':
+            content = request.data.get('content', '').strip()
+            if not content:
+                return Response({'error': 'Comment content cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
+            comment = TicketComment.objects.create(
+                ticket=ticket,
+                author=request.user,
+                content=content
+            )
+            serializer = TicketCommentSerializer(comment)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        comments = ticket.comments.all().select_related('author').order_by('created_at')
+        serializer = TicketCommentSerializer(comments, many=True)
+        return Response(serializer.data)
 
 
 class TicketCommentViewSet(viewsets.ModelViewSet):
@@ -88,9 +120,10 @@ class TicketCommentViewSet(viewsets.ModelViewSet):
             ).select_related('ticket', 'author')
 
         elif user.role == 'CLIENT':
-            if hasattr(user, 'client_profile') and user.client_profile:
+            client = user.get_client_profile() if hasattr(user, 'get_client_profile') else getattr(user, 'client_profile', None)
+            if client:
                 return TicketComment.objects.filter(
-                    ticket__client=user.client_profile
+                    ticket__client=client
                 ).select_related('ticket', 'author')
 
         return TicketComment.objects.none()

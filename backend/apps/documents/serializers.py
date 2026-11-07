@@ -51,8 +51,17 @@ class DocumentListSerializer(serializers.ModelSerializer):
 
     project_title = serializers.CharField(source='project.title', read_only=True)
     client_name = serializers.CharField(source='client.company_name', read_only=True)
+    file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
-        fields = ['id', 'title', 'category', 'version', 'project_title', 'client_name',
+        fields = ['id', 'title', 'category', 'version', 'file', 'file_url', 'project_title', 'client_name',
                   'is_shared_with_client', 'created_at']
+
+    def get_file_url(self, obj):
+        request = self.context.get('request')
+        if obj.file and request:
+            return request.build_absolute_uri(obj.file.url)
+        elif obj.file:
+            return obj.file.url
+        return None

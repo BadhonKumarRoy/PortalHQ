@@ -41,9 +41,10 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
         elif user.role == 'CLIENT':
             # Clients only see documents explicitly shared with them
-            if hasattr(user, 'client_profile') and user.client_profile:
+            client = user.get_client_profile() if hasattr(user, 'get_client_profile') else getattr(user, 'client_profile', None)
+            if client:
                 return Document.objects.filter(
-                    client=user.client_profile,
+                    client=client,
                     is_shared_with_client=True  # Must be explicitly shared
                 ).select_related('project', 'client', 'uploaded_by')
 

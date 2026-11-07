@@ -56,11 +56,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
             ).select_related('client', 'created_by')
 
         elif user.role == 'CLIENT':
-            # Clients only see projects belonging to their client profile
-            # First check if this user has an associated client profile
-            if hasattr(user, 'client_profile') and user.client_profile:
+            # Clients only see projects belonging to their linked client profile
+            client = user.get_client_profile() if hasattr(user, 'get_client_profile') else getattr(user, 'client_profile', None)
+            if client:
                 return Project.objects.filter(
-                    client=user.client_profile
+                    client=client
                 ).select_related('client', 'created_by')
 
         # Fallback: return nothing if no matching role or missing client profile

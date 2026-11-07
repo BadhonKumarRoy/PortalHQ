@@ -18,8 +18,8 @@ class AssetViewSet(viewsets.ModelViewSet):
         elif getattr(user, 'role', '') == 'EMPLOYEE':
             return Asset.objects.filter(assigned_to=user).order_by('-created_at')
         elif getattr(user, 'role', '') == 'CLIENT':
-            client_profile = getattr(user, 'client_profile', None)
-            if client_profile:
-                return Asset.objects.filter(client=client_profile).order_by('-created_at')
+            client = user.get_client_profile() if hasattr(user, 'get_client_profile') else getattr(user, 'client_profile', None)
+            if client:
+                return Asset.objects.filter(client=client).order_by('-created_at')
             return Asset.objects.none()
         return Asset.objects.all()

@@ -52,4 +52,4 @@ class ProjectListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ['id', 'title', 'client', 'client_name', 'status', 'start_date', 'end_date', 'created_at']
+        fields = ['id', 'title', 'description', 'client', 'client_name', 'status', 'start_date', 'end_date', 'budget', 'created_at']
