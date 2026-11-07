@@ -14,6 +14,9 @@ class ApprovalSerializer(serializers.ModelSerializer):
 
     # Readable display fields
     document_title = serializers.CharField(source='document.title', read_only=True)
+    document_file_url = serializers.CharField(source='document.file_url', read_only=True)
+    client_name = serializers.CharField(source='document.client.company_name', read_only=True)
+    project_title = serializers.CharField(source='document.project.title', read_only=True)
     requested_by_name = serializers.CharField(source='requested_by.full_name', read_only=True)
     reviewed_by_name = serializers.CharField(source='reviewed_by.full_name', read_only=True)
 
@@ -21,7 +24,8 @@ class ApprovalSerializer(serializers.ModelSerializer):
         model = Approval
         fields = [
             'id',
-            'document', 'document_title',
+            'document', 'document_title', 'document_file_url',
+            'client_name', 'project_title',
             'requested_by', 'requested_by_name',
             'reviewed_by', 'reviewed_by_name',
             'status', 'comments',

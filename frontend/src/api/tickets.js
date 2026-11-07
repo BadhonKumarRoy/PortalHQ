@@ -15,6 +15,9 @@ export const createTicket = (data) => api.post('/tickets/', data);
 /** Update a ticket (e.g., change status or assignee). */
 export const updateTicket = (id, data) => api.patch(`/tickets/${id}/`, data);
 
+/** Delete a support ticket (Admin only). */
+export const deleteTicket = (id) => api.delete(`/tickets/${id}/`);
+
 /** Get all comments for a specific ticket. */
 export const getTicketComments = (ticketId) =>
   api.get(`/tickets/${ticketId}/comments/`);
