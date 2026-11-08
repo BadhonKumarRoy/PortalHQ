@@ -56,7 +56,7 @@ class AnalyticsView(APIView):
     Returns high-level business intelligence, portfolio health, task velocities,
     ticket SLAs, and client distributions for the Reports dashboard.
     """
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrEmployee]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         # 1. Projects Statistics
@@ -193,7 +193,7 @@ class ExportReportView(APIView):
     GET /api/reports/export/?type=projects|tickets|clients|audit
     Exports operational data in CSV format for offline reporting and spreadsheet analysis.
     """
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrEmployee]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         export_type = request.query_params.get('type', 'projects').lower()

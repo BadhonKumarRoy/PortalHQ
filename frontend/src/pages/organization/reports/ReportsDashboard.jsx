@@ -58,8 +58,8 @@ export default function ReportsDashboard() {
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const [exportingType, setExportingType] = useState(null);
 
-  // Load analytics summary
-  const loadData = useCallback(async (isRefresh = false) => {
+  // Load analytics summary with automatic retry for cold starts
+  const loadData = useCallback(async (isRefresh = false, retryCount = 0) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
 
@@ -70,11 +70,21 @@ export default function ReportsDashboard() {
         setAuditLogs(res.data.recent_audits);
       }
     } catch (err) {
-      console.error(err);
-      toast.error('Failed to load operational analytics.');
+      console.error('Operational analytics load error:', err);
+      // Auto-retry once after 1.5 seconds if server was cold-starting or finishing deployment
+      if (retryCount < 1) {
+        setTimeout(() => {
+          loadData(isRefresh, retryCount + 1);
+        }, 1500);
+        return;
+      }
+      const msg = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to load operational analytics.';
+      toast.error(msg);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (retryCount >= 1 || isRefresh) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, []);
 
