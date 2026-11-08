@@ -69,9 +69,11 @@ export default function ReportsDashboard() {
       if (res.data?.recent_audits) {
         setAuditLogs(res.data.recent_audits);
       }
+      setLoading(false);
+      setRefreshing(false);
     } catch (err) {
       console.error('Operational analytics load error:', err);
-      // Auto-retry once after 1.5 seconds if server was cold-starting or finishing deployment
+      // Auto-retry once after 1.5 seconds if server was cold-starting
       if (retryCount < 1) {
         setTimeout(() => {
           loadData(isRefresh, retryCount + 1);
@@ -80,11 +82,8 @@ export default function ReportsDashboard() {
       }
       const msg = err.response?.data?.detail || err.response?.data?.error || err.message || 'Failed to load operational analytics.';
       toast.error(msg);
-    } finally {
-      if (retryCount >= 1 || isRefresh) {
-        setLoading(false);
-        setRefreshing(false);
-      }
+      setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 

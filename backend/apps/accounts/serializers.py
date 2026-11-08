@@ -123,12 +123,12 @@ class LoginSerializer(serializers.Serializer):
         Returns:
             dict: The validated data with the user object added.
         """
-        email = data.get('email')
+        email = (data.get('email') or '').strip()
         password = data.get('password')
 
-        # Try to find a user with this email
+        # Try to find a user with this email (case-insensitive)
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             # OWASP standard: Generic error message prevents email enumeration
             raise serializers.ValidationError('Invalid email or password.')
