@@ -28,6 +28,7 @@ from apps.tickets.models import Ticket, TicketComment
 from apps.documents.models import Document
 from apps.approvals.models import Approval
 from apps.communication.models import Announcement, Meeting, Notification
+from apps.reports.models import AuditLog
 
 
 class Command(BaseCommand):
@@ -486,13 +487,95 @@ class Command(BaseCommand):
             }
         )
 
-        Notification.objects.get_or_create(
-            recipient=badhon_user,
-            title='Master Admin Dashboard Online',
-            defaults={
-                'message': "Welcome Badhon. All systems, audit logs, and team members (Raghib, Khadija, Zulkijlee) are active and synced.",
-                'is_read': True,
-            }
-        )
+        # ─────────────────────────────────────────────────────────────
+        # 8. AUDIT LOGS & COMPLIANCE RECORDS
+        # ─────────────────────────────────────────────────────────────
+        if AuditLog.objects.count() == 0:
+            sample_logs = [
+                {
+                    'user': badhon_user,
+                    'action': 'LOGIN',
+                    'entity_type': 'UserSession',
+                    'entity_id': badhon_user.id,
+                    'description': 'Master Admin Badhon authenticated from executive workstation.',
+                    'ip_address': '192.168.1.10',
+                },
+                {
+                    'user': badhon_user,
+                    'action': 'CREATE',
+                    'entity_type': 'Project',
+                    'entity_id': p1.id,
+                    'description': f'Created new project "{p1.title}" with budget $48,500.00.',
+                    'ip_address': '192.168.1.10',
+                },
+                {
+                    'user': raghib_user,
+                    'action': 'UPDATE',
+                    'entity_type': 'Project',
+                    'entity_id': p1.id,
+                    'description': 'Assigned staff member Khadija to project modernization team.',
+                    'ip_address': '192.168.1.22',
+                },
+                {
+                    'user': khadija_user,
+                    'action': 'UPLOAD',
+                    'entity_type': 'Document',
+                    'entity_id': doc1.id,
+                    'description': f'Uploaded deliverable document "{doc1.title}".',
+                    'ip_address': '192.168.1.35',
+                },
+                {
+                    'user': khadija_user,
+                    'action': 'CREATE',
+                    'entity_type': 'Approval',
+                    'entity_id': 1,
+                    'description': 'Requested client sign-off and architecture review from Zulkijlee.',
+                    'ip_address': '192.168.1.35',
+                },
+                {
+                    'user': zulkijlee_user,
+                    'action': 'LOGIN',
+                    'entity_type': 'UserSession',
+                    'entity_id': zulkijlee_user.id,
+                    'description': 'Client Zulkijlee (UITS Tech Systems) logged into client portal.',
+                    'ip_address': '103.114.98.14',
+                },
+                {
+                    'user': zulkijlee_user,
+                    'action': 'APPROVE',
+                    'entity_type': 'Approval',
+                    'entity_id': 2,
+                    'description': 'Client approved "Master Service Agreement & SLA 2026" without amendments.',
+                    'ip_address': '103.114.98.14',
+                },
+                {
+                    'user': zulkijlee_user,
+                    'action': 'CREATE',
+                    'entity_type': 'Ticket',
+                    'entity_id': t1.id,
+                    'description': 'Submitted high-priority support ticket #1: "Need assistance with API webhook integration".',
+                    'ip_address': '103.114.98.14',
+                },
+                {
+                    'user': raghib_user,
+                    'action': 'UPDATE',
+                    'entity_type': 'Ticket',
+                    'entity_id': t1.id,
+                    'description': 'Dispatched Ticket #1 to engineer Khadija with status IN_PROGRESS.',
+                    'ip_address': '192.168.1.22',
+                },
+                {
+                    'user': khadija_user,
+                    'action': 'UPDATE',
+                    'entity_type': 'Task',
+                    'entity_id': 1,
+                    'description': 'Completed milestone deliverable: "Wireframe high-fidelity responsive dashboard layouts".',
+                    'ip_address': '192.168.1.35',
+                },
+            ]
+
+            for log_data in sample_logs:
+                AuditLog.objects.create(**log_data)
+            self.stdout.write(self.style.SUCCESS(f'Seeded {len(sample_logs)} realistic AuditLog compliance events.'))
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded team members: Badhon (Master Admin), Raghib (Admin), Khadija (Employee), Zulkijlee (Client at UITS Tech Systems)!'))

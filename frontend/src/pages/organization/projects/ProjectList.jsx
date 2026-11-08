@@ -1,9 +1,9 @@
 // src/pages/organization/projects/ProjectList.jsx
-// Lists all projects with status filter tabs, team assignment controls, and options to create/view/edit.
+// Lists all projects with status filter shortcuts, live search, team assignment controls, and options to create/view/edit.
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, Users, UserCheck, UserPlus } from 'lucide-react';
+import { Plus, Eye, Users, UserCheck, Search, Filter } from 'lucide-react';
 import { getProjects, updateProject } from '../../../api/projects';
 import { getUsers } from '../../../api/auth';
 import PageHeader from '../../../components/ui/PageHeader';
@@ -14,13 +14,21 @@ import Card from '../../../components/ui/Card';
 import Modal from '../../../components/ui/Modal';
 import toast from 'react-hot-toast';
 
-const STATUS_TABS = ['All', 'PLANNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED'];
+const STATUS_TABS = [
+  { key: 'All', label: 'All' },
+  { key: 'PLANNED', label: 'PLANNED' },
+  { key: 'IN_PROGRESS', label: 'IN PROGRESS' },
+  { key: 'UNDER_REVIEW', label: 'UNDER REVIEW' },
+  { key: 'ON_HOLD', label: 'ON HOLD' },
+  { key: 'COMPLETED', label: 'COMPLETED' },
+];
 
 export default function ProjectList() {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState([]);
+  const [allProjects, setAllProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeStatus, setActiveStatus] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Quick Team Management Modal state
   const [teamModalProject, setTeamModalProject] = useState(null);
@@ -28,18 +36,19 @@ export default function ProjectList() {
   const [selectedStaffIds, setSelectedStaffIds] = useState([]);
   const [submittingTeam, setSubmittingTeam] = useState(false);
 
+  // Fetch all projects from API
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
-      const params = activeStatus !== 'All' ? { status: activeStatus } : {};
-      const res = await getProjects(params);
-      setProjects(Array.isArray(res.data) ? res.data : res.data?.results || []);
+      const res = await getProjects({});
+      const data = Array.isArray(res.data) ? res.data : res.data?.results || [];
+      setAllProjects(data);
     } catch {
       toast.error('Failed to load projects.');
     } finally {
       setLoading(false);
     }
-  }, [activeStatus]);
+  }, []);
 
   useEffect(() => {
     fetchProjects();
@@ -54,6 +63,54 @@ export default function ProjectList() {
       })
       .catch(() => {});
   }, []);
+
+  // Compute live project counts for each status shortcut tab
+  const statusCounts = useMemo(() => {
+    const counts = {
+      All: allProjects.length,
+      PLANNED: 0,
+      IN_PROGRESS: 0,
+      UNDER_REVIEW: 0,
+      ON_HOLD: 0,
+      COMPLETED: 0,
+    };
+
+    allProjects.forEach((p) => {
+      const st = p.status?.toUpperCase();
+      if (st === 'PLANNED') counts.PLANNED += 1;
+      else if (st === 'IN_PROGRESS' || st === 'ACTIVE') counts.IN_PROGRESS += 1;
+      else if (st === 'UNDER_REVIEW') counts.UNDER_REVIEW += 1;
+      else if (st === 'ON_HOLD') counts.ON_HOLD += 1;
+      else if (st === 'COMPLETED') counts.COMPLETED += 1;
+    });
+
+    return counts;
+  }, [allProjects]);
+
+  // Filter projects by active status tab and search query
+  const displayedProjects = useMemo(() => {
+    return allProjects.filter((project) => {
+      // Status filter
+      if (activeStatus !== 'All') {
+        const st = project.status?.toUpperCase();
+        if (activeStatus === 'IN_PROGRESS') {
+          if (st !== 'IN_PROGRESS' && st !== 'ACTIVE') return false;
+        } else if (st !== activeStatus) {
+          return false;
+        }
+      }
+
+      // Search query filter (title or client name)
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const titleMatch = (project.title || '').toLowerCase().includes(q);
+        const clientMatch = (project.client_name || '').toLowerCase().includes(q);
+        if (!titleMatch && !clientMatch) return false;
+      }
+
+      return true;
+    });
+  }, [allProjects, activeStatus, searchQuery]);
 
   const openTeamModal = (e, project) => {
     e.stopPropagation(); // prevent row click navigation
@@ -147,7 +204,7 @@ export default function ProjectList() {
     <div className="space-y-6">
       <PageHeader
         title="Projects"
-        subtitle={`${projects.length} total client projects across your organization`}
+        subtitle={`${allProjects.length} total client projects across your organization`}
         action={
           <Button
             icon={Plus}
@@ -160,27 +217,62 @@ export default function ProjectList() {
       />
 
       <Card>
-        {/* Status filter tabs */}
-        <div className="flex gap-1 flex-wrap mb-4 border-b border-slate-100 pb-3">
-          {STATUS_TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveStatus(tab)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                activeStatus === tab ? 'text-white' : 'text-slate-500 hover:bg-slate-100'
-              }`}
-              style={activeStatus === tab ? { background: '#121358' } : {}}
-            >
-              {tab === 'All' ? 'All' : tab.replace(/_/g, ' ')}
-            </button>
-          ))}
+        {/* Status filter tabs & search shortcut bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-slate-100 pb-4">
+          {/* Shortcuts */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {STATUS_TABS.map((tab) => {
+              const isActive = activeStatus === tab.key;
+              const count = statusCounts[tab.key] ?? 0;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveStatus(tab.key)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                    isActive
+                      ? 'text-white shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                  style={isActive ? { background: '#121358' } : {}}
+                >
+                  <span>{tab.label}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                      isActive
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Quick Search */}
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+            <input
+              type="text"
+              placeholder="Search project or client..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-[#121358]/20 focus:border-[#121358] transition-all"
+            />
+          </div>
         </div>
 
+        {/* Projects table */}
         <Table
           columns={columns}
-          data={projects}
+          data={displayedProjects}
           loading={loading}
-          emptyMessage="No projects found."
+          emptyMessage={
+            searchQuery.trim() || activeStatus !== 'All'
+              ? `No projects found matching "${activeStatus !== 'All' ? activeStatus.replace(/_/g, ' ') : ''}" filter.`
+              : 'No projects registered yet.'
+          }
           onRowClick={(row) => navigate(`/organization/projects/${row.id}`)}
         />
       </Card>

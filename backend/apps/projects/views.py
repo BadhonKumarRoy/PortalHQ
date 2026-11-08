@@ -46,25 +46,39 @@ class ProjectViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if user.role == 'ADMIN':
-            # Admins can see all projects
-            return Project.objects.all().select_related('client', 'created_by')
-
+            qs = Project.objects.all().select_related('client', 'created_by')
         elif user.role == 'EMPLOYEE':
-            # Employees only see projects they're assigned to
-            return Project.objects.filter(
+            qs = Project.objects.filter(
                 assigned_employees=user
             ).select_related('client', 'created_by')
-
         elif user.role == 'CLIENT':
-            # Clients only see projects belonging to their linked client profile
             client = user.get_client_profile() if hasattr(user, 'get_client_profile') else getattr(user, 'client_profile', None)
             if client:
-                return Project.objects.filter(
+                qs = Project.objects.filter(
                     client=client
                 ).select_related('client', 'created_by')
+            else:
+                return Project.objects.none()
+        else:
+            return Project.objects.none()
 
-        # Fallback: return nothing if no matching role or missing client profile
-        return Project.objects.none()
+        # Safely extract query parameters (DRF request or Django WSGIRequest)
+        req_params = getattr(self.request, 'query_params', getattr(self.request, 'GET', {}))
+
+        # Filter by status query param
+        status_param = req_params.get('status')
+        if status_param and status_param != 'All':
+            if status_param in ('IN_PROGRESS', 'ACTIVE'):
+                qs = qs.filter(status__in=['IN_PROGRESS', 'ACTIVE'])
+            else:
+                qs = qs.filter(status=status_param)
+
+        # Filter by client query param
+        client_param = req_params.get('client')
+        if client_param:
+            qs = qs.filter(client_id=client_param)
+
+        return qs
 
     def get_serializer_class(self):
         """Use the light serializer for lists, full one for everything else."""
